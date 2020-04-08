@@ -8,6 +8,8 @@
 
         public string Countries { get; set; }
 
+        public string DayOne { get; set; }
+
         public string Stats { get; set; }
     }
 }

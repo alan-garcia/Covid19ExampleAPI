@@ -38,6 +38,16 @@ namespace Covid19ExampleAPI.Controllers
             return allCountriesList.ToList();
         }
 
+        [HttpGet("dayone/{countryName}")]
+        public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(string countryName)
+        {
+            var dayOneUrl = _appSettings.Value.DayOne.Replace("{countryName}", countryName);
+
+            var dayOneList = await _apiService.GetAsync<IEnumerable<DayOne>>(dayOneUrl);
+
+            return dayOneList.ToList();
+        }
+
         [HttpGet("stats")]
         public async Task<ActionResult<Stat>> GetStats()
         {
