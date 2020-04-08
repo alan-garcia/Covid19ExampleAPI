@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Covid19ExampleAPI.Models;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,8 @@ namespace Covid19ExampleAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            services.Configure<CovidApisAppSettingsModel>(Configuration.GetSection("Covid19Apis"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
