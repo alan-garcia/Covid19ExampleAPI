@@ -3,5 +3,6 @@
     public class CovidApisAppSettingsModel
     {
         public string Summary { get; set; }
+        public string Countries { get; set; }
     }
 }

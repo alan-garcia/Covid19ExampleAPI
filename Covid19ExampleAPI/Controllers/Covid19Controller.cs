@@ -1,5 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Covid19ExampleAPI.Models;
+using Covid19ExampleAPI.Models.Countries;
 using Covid19ExampleAPI.Models.Summary;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -17,14 +20,22 @@ namespace Covid19ExampleAPI.Controllers
             _appSettings = appSettings;
         }
 
-        // GET api/values
-        [HttpGet]
+        [HttpGet("summary")]
         public async Task<ActionResult<Summary>> GetSummary()
         {
             var apiService = new ApiService();
             var summaryInfo = await apiService.GetAsync<Summary>(_appSettings.Value.Summary);
 
             return summaryInfo;
+        }
+
+        [HttpGet("countries")]
+        public async Task<ActionResult<IEnumerable<Country>>> GetCountries()
+        {
+            var apiService = new ApiService();
+            var allCountriesList = await apiService.GetAsync<IEnumerable<Country>>(_appSettings.Value.Countries);
+
+            return allCountriesList.ToList();
         }
     }
 }
