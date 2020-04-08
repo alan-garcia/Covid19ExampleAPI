@@ -1,4 +1,6 @@
 ﻿using Covid19ExampleAPI.Models;
+using Covid19ExampleAPI.Services;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Net.Http;
@@ -7,12 +9,14 @@ using System.Threading.Tasks;
 
 namespace Covid19ExampleAPI
 {
-    public class ApiService
+    public class ApiService : IApiService
     {
+        private readonly string _urlApiBase;
         private readonly int _loginTimeOut;
 
-        public ApiService() {
+        public ApiService(IOptions<CovidApisAppSettingsModel> appSettings) {
             _loginTimeOut = 20;
+            _urlApiBase = appSettings.Value.UrlBase;
         }
 
         public async Task<T> GetAsync<T>(string urlApi) where T : class
@@ -24,7 +28,7 @@ namespace Covid19ExampleAPI
                 httpClient.DefaultRequestHeaders.Accept.Clear();
                 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var response = await httpClient.GetAsync(urlApi);
+                var response = await httpClient.GetAsync(_urlApiBase + urlApi);
                 if (response.IsSuccessStatusCode)
                 {
                     var httpContent = await response.Content.ReadAsStringAsync();

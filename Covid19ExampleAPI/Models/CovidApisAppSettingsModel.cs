@@ -2,6 +2,8 @@
 {
     public class CovidApisAppSettingsModel
     {
+        public string UrlBase { get; set; }
+
         public string Summary { get; set; }
 
         public string Countries { get; set; }

@@ -5,6 +5,7 @@ using Covid19ExampleAPI.Models;
 using Covid19ExampleAPI.Models.Countries;
 using Covid19ExampleAPI.Models.Stats;
 using Covid19ExampleAPI.Models.Summary;
+using Covid19ExampleAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -14,27 +15,25 @@ namespace Covid19ExampleAPI.Controllers
     [ApiController]
     public class Covid19Controller : ControllerBase
     {
+        private readonly IApiService _apiService;
         private readonly IOptions<CovidApisAppSettingsModel> _appSettings;
 
-        public Covid19Controller(IOptions<CovidApisAppSettingsModel> appSettings)
+        public Covid19Controller(IApiService apiService, IOptions<CovidApisAppSettingsModel> appSettings)
         {
+            _apiService = apiService;
             _appSettings = appSettings;
         }
 
         [HttpGet("summary")]
         public async Task<ActionResult<Summary>> GetSummary()
         {
-            var apiService = new ApiService();
-            var summaryInfo = await apiService.GetAsync<Summary>(_appSettings.Value.Summary);
-
-            return summaryInfo;
+            return await _apiService.GetAsync<Summary>(_appSettings.Value.Summary);
         }
 
         [HttpGet("countries")]
         public async Task<ActionResult<IEnumerable<Country>>> GetCountries()
         {
-            var apiService = new ApiService();
-            var allCountriesList = await apiService.GetAsync<IEnumerable<Country>>(_appSettings.Value.Countries);
+            var allCountriesList = await _apiService.GetAsync<IEnumerable<Country>>(_appSettings.Value.Countries);
 
             return allCountriesList.ToList();
         }
@@ -42,8 +41,7 @@ namespace Covid19ExampleAPI.Controllers
         [HttpGet("stats")]
         public async Task<ActionResult<Stat>> GetStats()
         {
-            var apiService = new ApiService();
-            var stats = await apiService.GetAsync<Stat>(_appSettings.Value.Stats);
+            var stats = await _apiService.GetAsync<Stat>(_appSettings.Value.Stats);
 
             return stats;
         }
