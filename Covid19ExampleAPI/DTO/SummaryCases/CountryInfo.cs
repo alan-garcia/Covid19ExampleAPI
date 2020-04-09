@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Covid19ExampleAPI.Models.Summary
+namespace Covid19ExampleAPI.DTO.SummaryCases
 {
     public class CountryInfo
     {

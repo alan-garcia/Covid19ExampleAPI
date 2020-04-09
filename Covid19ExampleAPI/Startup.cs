@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Covid19ExampleAPI
 {
@@ -23,7 +22,7 @@ namespace Covid19ExampleAPI
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
-            services.Configure<CovidApisAppSettingsModel>(Configuration.GetSection("Covid19Apis"));
+            services.Configure<CovidApiAppSettingsModel>(Configuration.GetSection("Covid19Api"));
 
             services.AddSingleton<IApiService, ApiService>();
         }

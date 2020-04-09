@@ -1,4 +1,4 @@
-﻿namespace Covid19ExampleAPI.Models.Stats
+﻿namespace Covid19ExampleAPI.DTO.StatsCases
 {
     public class Stat
     {

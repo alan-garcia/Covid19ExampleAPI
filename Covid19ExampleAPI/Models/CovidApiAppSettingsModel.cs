@@ -1,6 +1,6 @@
 ﻿namespace Covid19ExampleAPI.Models
 {
-    public class CovidApisAppSettingsModel
+    public class CovidApiAppSettingsModel
     {
         public string UrlBase { get; set; }
 

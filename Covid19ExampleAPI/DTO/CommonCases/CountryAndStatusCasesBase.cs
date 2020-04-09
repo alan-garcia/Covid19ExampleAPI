@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace Covid19ExampleAPI.Models
+namespace Covid19ExampleAPI.DTO.CommonCases
 {
-    public class LiveByCountryAndStatus
+    public class CountryAndStatusCasesBase
     {
         public string Country { get; set; }
 

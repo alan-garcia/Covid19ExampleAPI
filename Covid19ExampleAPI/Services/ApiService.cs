@@ -14,7 +14,7 @@ namespace Covid19ExampleAPI
         private readonly string _urlApiBase;
         private readonly int _loginTimeOut;
 
-        public ApiService(IOptions<CovidApisAppSettingsModel> appSettings) {
+        public ApiService(IOptions<CovidApiAppSettingsModel> appSettings) {
             _loginTimeOut = 20;
             _urlApiBase = appSettings.Value.UrlBase;
         }
