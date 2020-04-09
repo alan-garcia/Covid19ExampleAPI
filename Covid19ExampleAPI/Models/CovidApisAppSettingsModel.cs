@@ -14,6 +14,12 @@
 
         public string DayOneTotal { get; set; }
 
+        public string ByCountry { get; set; }
+
+        public string ByCountryLive { get; set; }
+
+        public string ByCountryTotal { get; set; }
+
         public string Stats { get; set; }
     }
 }

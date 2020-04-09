@@ -68,6 +68,36 @@ namespace Covid19ExampleAPI.Controllers
             return dayOneTotalList.ToList();
         }
 
+        [HttpGet("country/{countryName}")]
+        public async Task<ActionResult<IEnumerable<ByCountry>>> GetByCountry(string countryName)
+        {
+            var byCountryUrl = _appSettings.Value.ByCountry.Replace("{countryName}", countryName);
+
+            var byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
+
+            return byCountryList.ToList();
+        }
+
+        [HttpGet("country/{countryName}/live")]
+        public async Task<ActionResult<IEnumerable<ByCountryLive>>> GetByCountryLive(string countryName)
+        {
+            var byCountryLiveUrl = _appSettings.Value.ByCountryLive.Replace("{countryName}", countryName);
+
+            var byCountryLiveList = await _apiService.GetAsync<IEnumerable<ByCountryLive>>(byCountryLiveUrl);
+
+            return byCountryLiveList.ToList();
+        }
+
+        [HttpGet("total/country/{countryName}")]
+        public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(string countryName)
+        {
+            var byCountryTotalUrl = _appSettings.Value.ByCountryTotal.Replace("{countryName}", countryName);
+
+            var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
+
+            return byCountryTotalList.ToList();
+        }
+
         [HttpGet("stats")]
         public async Task<ActionResult<Stat>> GetStats()
         {
