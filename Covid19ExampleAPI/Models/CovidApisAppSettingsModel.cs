@@ -20,6 +20,10 @@
 
         public string ByCountryTotal { get; set; }
 
+        public string LiveByCountryAndStatus { get; set; }
+
+        public string LiveByCountryAndStatusAfterDate { get; set; }
+
         public string Stats { get; set; }
     }
 }

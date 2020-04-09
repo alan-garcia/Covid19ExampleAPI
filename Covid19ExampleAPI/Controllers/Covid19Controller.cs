@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Covid19ExampleAPI.Models;
@@ -96,6 +97,34 @@ namespace Covid19ExampleAPI.Controllers
             var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
 
             return byCountryTotalList.ToList();
+        }
+
+        [HttpGet("live/country/{countryName}/{status}")]
+        public async Task<ActionResult<IEnumerable<LiveByCountryAndStatus>>>
+            GetLiveByCountryAndStatus(string countryName, string status)
+        {
+            var countryAndStatusUrl = _appSettings.Value.LiveByCountryAndStatus
+                                        .Replace("{countryName}", countryName)
+                                        .Replace("{status}", status);
+
+            var countryAndStatusList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatus>>(countryAndStatusUrl);
+
+            return countryAndStatusList.ToList();
+        }
+
+        [HttpGet("live/country/{countryName}/{status}/{date}")]
+        public async Task<ActionResult<IEnumerable<LiveByCountryAndStatusAfterDate>>>
+            GetLiveByCountryAndStatusAfterDate(string countryName, string status, DateTime date)
+        {
+            var countryAndStatusWithDateUrl = _appSettings.Value.LiveByCountryAndStatusAfterDate
+                                        .Replace("{countryName}", countryName)
+                                        .Replace("{status}", status)
+                                        .Replace("{date}", date.ToString("yyyy-MM-ddThh:mm:ssZ"));
+
+            var countryAndStatusWithDateList = await _apiService
+                .GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(countryAndStatusWithDateUrl);
+
+            return countryAndStatusWithDateList.ToList();
         }
 
         [HttpGet("stats")]
