@@ -39,13 +39,33 @@ namespace Covid19ExampleAPI.Controllers
         }
 
         [HttpGet("dayone/{countryName}")]
-        public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(string countryName)
+        public async Task<ActionResult<IEnumerable<DayOneLive>>> GetDayOneByCountry(string countryName)
         {
             var dayOneUrl = _appSettings.Value.DayOne.Replace("{countryName}", countryName);
 
-            var dayOneList = await _apiService.GetAsync<IEnumerable<DayOne>>(dayOneUrl);
+            var dayOneList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneUrl);
 
             return dayOneList.ToList();
+        }
+
+        [HttpGet("dayone/{countryName}/live")]
+        public async Task<ActionResult<IEnumerable<DayOneLive>>> GetDayOneLiveByCountry(string countryName)
+        {
+            var dayOneLiveUrl = _appSettings.Value.DayOneLive.Replace("{countryName}", countryName);
+
+            var dayOneLiveList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneLiveUrl);
+
+            return dayOneLiveList.ToList();
+        }
+
+        [HttpGet("total/dayone/{countryName}")]
+        public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(string countryName)
+        {
+            var dayOneTotalUrl = _appSettings.Value.DayOneTotal.Replace("{countryName}", countryName);
+
+            var dayOneTotalList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
+
+            return dayOneTotalList.ToList();
         }
 
         [HttpGet("stats")]

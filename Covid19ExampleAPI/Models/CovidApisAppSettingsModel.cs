@@ -10,6 +10,10 @@
 
         public string DayOne { get; set; }
 
+        public string DayOneLive { get; set; }
+
+        public string DayOneTotal { get; set; }
+
         public string Stats { get; set; }
     }
 }
