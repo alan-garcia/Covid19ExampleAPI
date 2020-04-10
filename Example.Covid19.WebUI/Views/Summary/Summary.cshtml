@@ -1,0 +1,116 @@
+﻿@model Example.Covid19.WebUI.DTO.SummaryCases.Summary
+@{
+  ViewData["Title"] = "Summary";
+}
+
+<h1>Resumen</h1>
+
+<h2>Global</h2>
+<p><strong>Fecha actualizada:</strong> @Model.Date</p>
+
+<table class="table table-bordered">
+  <thead>
+    <tr class="text-center">
+      <th scope="col">Casos nuevos</th>
+      <th scope="col">Total casos</th>
+      <th scope="col">Muertes nuevas</th>
+      <th scope="col">Total muertos</th>
+      <th scope="col">Nuevas recuperadas</th>
+      <th scope="col">Total recuperadas</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="text-center">
+      @if (@Model.Global.NewConfirmed > 0)
+      {
+        <td class="text-warning">+@Model.Global.NewConfirmed</td>
+      }
+      else
+      {
+        <td>@Model.Global.NewConfirmed</td>
+      }
+
+      <td class="bg-warning">@Model.Global.TotalConfirmed</td>
+
+      @if (@Model.Global.NewDeaths > 0)
+      {
+        <td class="text-danger">+@Model.Global.NewDeaths</td>
+      }
+      else
+      {
+        <td>@Model.Global.NewDeaths</td>
+      }
+
+      <td class="bg-danger text-white">@Model.Global.TotalDeaths</td>
+
+      @if (@Model.Global.NewRecovered > 0)
+      {
+        <td class="text-success">+@Model.Global.NewRecovered</td>
+      }
+      else
+      {
+        <td>@Model.Global.NewRecovered</td>
+      }
+
+      <td class="bg-success text-white">@Model.Global.TotalRecovered</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Casos por países</h2>
+<p><strong>Fecha actualizada:</strong> @Model.Date</p>
+
+<table class="table table-bordered">
+  <thead>
+    <tr class="text-center">
+      <th scope="col">País</th>
+      <th scope="col">Casos nuevos</th>
+      <th scope="col">Total casos</th>
+      <th scope="col">Muertes nuevas</th>
+      <th scope="col">Total muertos</th>
+      <th scope="col">Nuevas recuperadas</th>
+      <th scope="col">Total recuperadas</th>
+    </tr>
+  </thead>
+  <tbody>
+    @foreach (var country in Model.Countries)
+    {
+      <tr class="text-center">
+        <td>@country.Country</td>
+
+        @if (@country.NewConfirmed > 0)
+        {
+            <td class="text-warning">+@country.NewConfirmed</td>
+        }
+        else
+        {
+            <td>@country.NewConfirmed</td>
+        }
+
+        <td class="bg-warning">@country.TotalConfirmed</td>
+
+        @if (@country.NewDeaths > 0)
+        {
+            <td class="text-danger">+@country.NewDeaths</td>
+        }
+        else
+        {
+            <td>@country.NewDeaths</td>
+        }
+
+        <td class="bg-danger text-white">@country.TotalDeaths</td>
+
+        @if (@country.NewRecovered > 0)
+        {
+            <td class="text-success">+@country.NewRecovered</td>
+        }
+        else
+        {
+            <td>@country.NewRecovered</td>
+        }
+
+        <td class="bg-success text-white">@country.TotalRecovered</td>
+      </tr>
+    }
+  </tbody>
+</table>
