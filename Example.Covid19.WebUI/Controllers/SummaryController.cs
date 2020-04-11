@@ -18,7 +18,6 @@ namespace Example.Covid19.WebUI.Controllers
             _config = config;
         }
 
-        // GET: Summary
         public async Task<ActionResult<Summary>> GetSummary()
         {
             var summary = await _apiService.GetAsync<Summary>
@@ -27,12 +26,6 @@ namespace Example.Covid19.WebUI.Controllers
             );
 
             return View("Summary", summary);
-        }
-
-        // GET: Summary/Details/5
-        public ActionResult Details(int id)
-        {
-            return View();
         }
 
     }
