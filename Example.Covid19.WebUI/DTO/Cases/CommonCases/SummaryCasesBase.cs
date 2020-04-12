@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Example.Covid19.WebUI.DTO.CommonCases
+namespace Example.Covid19.WebUI.DTO.Cases.CommonCases
 {
     public class SummaryCasesBase
     {

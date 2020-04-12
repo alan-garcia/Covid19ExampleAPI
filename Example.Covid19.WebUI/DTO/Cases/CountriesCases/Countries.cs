@@ -1,4 +1,4 @@
-﻿namespace Example.Covid19.WebUI.DTO.CountriesCases
+﻿namespace Example.Covid19.WebUI.DTO.Cases.CountriesCases
 {
     public class Countries
     {
