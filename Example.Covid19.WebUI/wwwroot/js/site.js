@@ -1,4 +1,17 @@
-﻿// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿$(function () {
+  var byCountryDateFrom = document.getElementById("byCountryDateFrom");
+  var byCountryDateTo = document.getElementById("byCountryDateTo");
 
-// Write your JavaScript code.
+  var date = new Date();
+  var day = date.getDate();
+  var month = date.getMonth() + 1;
+  var year = date.getFullYear();
+
+  if (month < 10) month = "0" + month;
+  if (day < 10) day = "0" + day;
+
+  var today = year + "-" + month + "-" + day;
+
+  byCountryDateFrom.value = today;
+  byCountryDateTo.value = today;
+});
