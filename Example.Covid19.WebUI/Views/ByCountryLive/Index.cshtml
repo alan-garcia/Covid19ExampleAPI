@@ -1,25 +1,25 @@
-﻿@model Example.Covid19.WebUI.ViewModels.ByCountryViewModel
+﻿@model Example.Covid19.WebUI.ViewModels.ByCountryLiveViewModel
 @{
-  ViewData["Title"] = "By Country";
+  ViewData["Title"] = "By Country Live";
 }
 
-<h1>By Country</h1>
+<h1>By Country Live</h1>
 
 <div class="mb-3">
-  <form class="form-inline my-2 my-lg-0" asp-controller="ByCountry" asp-action="GetByCountry" method="post">
+  <form class="form-inline my-2 my-lg-0" asp-controller="ByCountryLive" asp-action="GetByCountryLive" method="post">
     <select class="custom-select" asp-for="Country" asp-items="@Model.Countries">
       <option selected value="">-- Seleccione un país --</option>
     </select>
     <select class="custom-select" asp-for="StatusType" asp-items="@Model.StatusTypeList">
       <option selected value="">-- Seleccione estado caso --</option>
     </select>
-    <input type="date" id="byCountryDateFrom" class="custom-select" asp-for="DateFrom" />
-    <input type="date" id="byCountryDateTo" class="custom-select" asp-for="DateTo" />
-    <button id="byCountrySearchButton" class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar</button>
+    <input type="date" id="byCountryLiveDateFrom" class="custom-select" asp-for="DateFrom" />
+    <input type="date" id="byCountryLiveDateTo" class="custom-select" asp-for="DateTo" />
+    <button id="byCountryLiveSearchButton" class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar</button>
   </form>
 </div>
 
-@if (Model.ByCountry != null)
+@if (Model.ByCountryLive != null)
 {
   <table class="table table-bordered">
     <thead>
@@ -33,7 +33,7 @@
       </tr>
     </thead>
     <tbody>
-      @foreach (var dayOneLive in Model.ByCountry)
+      @foreach (var dayOneLive in Model.ByCountryLive)
       {
         <tr class="text-center">
           <td>@dayOneLive.Country</td>

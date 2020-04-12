@@ -1,6 +1,10 @@
 ﻿$(function () {
   var byCountryDateFrom = document.getElementById("byCountryDateFrom");
   var byCountryDateTo = document.getElementById("byCountryDateTo");
+  var byCountryLiveDateFrom = document.getElementById("byCountryLiveDateFrom");
+  var byCountryLiveDateTo = document.getElementById("byCountryLiveDateTo");
+  var byCountryTotalDateFrom = document.getElementById("byCountryTotalDateFrom");
+  var byCountryTotalDateTo = document.getElementById("byCountryTotalDateTo");
 
   var date = new Date();
   var day = date.getDate();
@@ -14,4 +18,8 @@
 
   byCountryDateFrom.value = today;
   byCountryDateTo.value = today;
+  byCountryLiveDateFrom.value = today;
+  byCountryLiveDateTo.value = today;
+  byCountryTotalDateFrom.value = today;
+  byCountryTotalDateTo.value = today;
 });
