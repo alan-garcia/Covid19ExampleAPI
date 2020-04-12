@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Example.Covid19.WebUI.Config;
+﻿using Example.Covid19.WebUI.Config;
 using Example.Covid19.WebUI.DTO.Cases.CountriesCases;
 using Example.Covid19.WebUI.DTO.Cases.DayOneCases;
 using Example.Covid19.WebUI.Services;
@@ -9,10 +6,13 @@ using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class DayOneController : Controller
+    public class DayOneTotalController : Controller
     {
         private readonly IApiService _apiService;
         private readonly IConfiguration _config;
@@ -20,7 +20,7 @@ namespace Example.Covid19.WebUI.Controllers
         private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
         private const string STATUS_PLACEHOLDER = "{status}";
 
-        public DayOneController(IApiService apiService, IConfiguration config)
+        public DayOneTotalController(IApiService apiService, IConfiguration config)
         {
             _apiService = apiService;
             _config = config;
@@ -28,37 +28,37 @@ namespace Example.Covid19.WebUI.Controllers
 
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var dayOneViewModel = new DayOneViewModel
+            var dayOneTotalViewModel = new DayOneTotalViewModel
             {
                 Countries = await GetCountries(),
                 StatusTypeList = GetStatusTypeList()
             };
 
-            return View(dayOneViewModel);
+            return View(dayOneTotalViewModel);
         }
 
-        public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(DayOneViewModel dayOneViewModel)
+        public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(DayOneTotalViewModel dayOneTotalLiveViewModel)
         {
-            if(!string.IsNullOrEmpty(dayOneViewModel.Country) && !string.IsNullOrEmpty(dayOneViewModel.StatusType))
+            if (!string.IsNullOrEmpty(dayOneTotalLiveViewModel.Country))
             {
-                var dayOneUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_KEY}")
-                                .Replace(COUNTRYNAME_PLACEHOLDER, dayOneViewModel.Country)
-                                .Replace(STATUS_PLACEHOLDER, dayOneViewModel.StatusType);
+                var dayOneTotalUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_TOTAL_KEY}")
+                                    .Replace(COUNTRYNAME_PLACEHOLDER, dayOneTotalLiveViewModel.Country)
+                                    .Replace(STATUS_PLACEHOLDER, dayOneTotalLiveViewModel.StatusType);
 
-                var dayOneByCountryList = await _apiService.GetAsync<IEnumerable<DayOne>>(dayOneUrl);
-                var dayOneByCountryListOrdered = dayOneByCountryList.OrderByDescending(day => day.Date.Date);
+                var dayOneTotalByCountryList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
+                var dayOneTotalByCountryListOrdered = dayOneTotalByCountryList.OrderByDescending(day => day.Date.Date);
 
-                dayOneViewModel.Countries = await GetCountries();
-                dayOneViewModel.StatusTypeList = GetStatusTypeList();
-                dayOneViewModel.DayOne = dayOneByCountryListOrdered;
+                dayOneTotalLiveViewModel.Countries = await GetCountries();
+                dayOneTotalLiveViewModel.StatusTypeList = GetStatusTypeList();
+                dayOneTotalLiveViewModel.DayOneTotal = dayOneTotalByCountryListOrdered;
             }
             else
             {
-                dayOneViewModel.Countries = await GetCountries();
-                dayOneViewModel.StatusTypeList = GetStatusTypeList();
+                dayOneTotalLiveViewModel.Countries = await GetCountries();
+                dayOneTotalLiveViewModel.StatusTypeList = GetStatusTypeList();
             }
 
-            return View("Index", dayOneViewModel);
+            return View("Index", dayOneTotalLiveViewModel);
         }
 
         private async Task<IEnumerable<SelectListItem>> GetCountries()

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class DayOneController : Controller
+    public class DayOneLiveController : Controller
     {
         private readonly IApiService _apiService;
         private readonly IConfiguration _config;
@@ -20,7 +20,7 @@ namespace Example.Covid19.WebUI.Controllers
         private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
         private const string STATUS_PLACEHOLDER = "{status}";
 
-        public DayOneController(IApiService apiService, IConfiguration config)
+        public DayOneLiveController(IApiService apiService, IConfiguration config)
         {
             _apiService = apiService;
             _config = config;
@@ -28,37 +28,37 @@ namespace Example.Covid19.WebUI.Controllers
 
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var dayOneViewModel = new DayOneViewModel
+            var dayOneLiveViewModel = new DayOneLiveViewModel
             {
                 Countries = await GetCountries(),
                 StatusTypeList = GetStatusTypeList()
             };
 
-            return View(dayOneViewModel);
+            return View(dayOneLiveViewModel);
         }
 
-        public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(DayOneViewModel dayOneViewModel)
+        public async Task<ActionResult<IEnumerable<DayOneLive>>> GetDayOneLiveByCountry(DayOneLiveViewModel dayOneLiveViewModel)
         {
-            if(!string.IsNullOrEmpty(dayOneViewModel.Country) && !string.IsNullOrEmpty(dayOneViewModel.StatusType))
+            if (!string.IsNullOrEmpty(dayOneLiveViewModel.Country))
             {
-                var dayOneUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_KEY}")
-                                .Replace(COUNTRYNAME_PLACEHOLDER, dayOneViewModel.Country)
-                                .Replace(STATUS_PLACEHOLDER, dayOneViewModel.StatusType);
+                var dayOneLiveUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_LIVE_KEY}")
+                                    .Replace(COUNTRYNAME_PLACEHOLDER, dayOneLiveViewModel.Country)
+                                    .Replace(STATUS_PLACEHOLDER, dayOneLiveViewModel.StatusType);
 
-                var dayOneByCountryList = await _apiService.GetAsync<IEnumerable<DayOne>>(dayOneUrl);
-                var dayOneByCountryListOrdered = dayOneByCountryList.OrderByDescending(day => day.Date.Date);
+                var dayOneLiveByCountryList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneLiveUrl);
+                var dayOneLiveByCountryListOrdered = dayOneLiveByCountryList.OrderByDescending(day => day.Date.Date);
 
-                dayOneViewModel.Countries = await GetCountries();
-                dayOneViewModel.StatusTypeList = GetStatusTypeList();
-                dayOneViewModel.DayOne = dayOneByCountryListOrdered;
+                dayOneLiveViewModel.Countries = await GetCountries();
+                dayOneLiveViewModel.StatusTypeList = GetStatusTypeList();
+                dayOneLiveViewModel.DayOneLive = dayOneLiveByCountryListOrdered;
             }
             else
             {
-                dayOneViewModel.Countries = await GetCountries();
-                dayOneViewModel.StatusTypeList = GetStatusTypeList();
+                dayOneLiveViewModel.Countries = await GetCountries();
+                dayOneLiveViewModel.StatusTypeList = GetStatusTypeList();
             }
 
-            return View("Index", dayOneViewModel);
+            return View("Index", dayOneLiveViewModel);
         }
 
         private async Task<IEnumerable<SelectListItem>> GetCountries()

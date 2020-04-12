@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Example.Covid19.WebUI.ViewModels
 {
-    public class DayOneViewModel
+    public class DayOneTotalViewModel
     {
         public string Country { get; set; }
 
@@ -14,6 +14,6 @@ namespace Example.Covid19.WebUI.ViewModels
 
         public IEnumerable<SelectListItem> Countries { get; set; }
 
-        public IEnumerable<DayOne> DayOne { get; set; }
+        public IEnumerable<DayOneTotal> DayOneTotal { get; set; }
     }
 }
