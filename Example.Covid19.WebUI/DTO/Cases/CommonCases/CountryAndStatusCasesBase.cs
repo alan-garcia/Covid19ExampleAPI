@@ -1,12 +1,18 @@
 ﻿using System;
 
-namespace Example.Covid19.WebUI.DTO.Cases.LiveByCountryCases
+namespace Example.Covid19.WebUI.DTO.Cases.CommonCases
 {
     public class CountryAndStatusCasesBase
     {
         public string Country { get; set; }
 
         public string CountryCode { get; set; }
+
+        public string Province { get; set; }
+
+        public string City { get; set; }
+
+        public string CityCode { get; set; }
 
         public string Lat { get; set; }
 
@@ -21,7 +27,5 @@ namespace Example.Covid19.WebUI.DTO.Cases.LiveByCountryCases
         public int Active { get; set; }
 
         public DateTime Date { get; set; }
-
-        public string LocationID { get; set; }
     }
 }

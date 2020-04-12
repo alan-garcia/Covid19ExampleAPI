@@ -1,0 +1,60 @@
+﻿@model Example.Covid19.WebUI.ViewModels.LiveByCountryAndStatusAfterDateViewModel
+@{
+  ViewData["Title"] = "Live By Country and Status After Date";
+}
+
+<h1>Live By Country And Status After Date</h1>
+
+<div class="mb-3">
+  <form class="form-inline my-2 my-lg-0" asp-controller="LiveByCountryAndStatusAfterDate" asp-action="GetLiveByCountryAndStatusAfterDate" method="post">
+    <select class="custom-select" asp-for="Country" asp-items="@Model.Countries">
+      <option selected value="">-- Seleccione un país --</option>
+    </select>
+    <select class="custom-select" asp-for="StatusType" asp-items="@Model.StatusTypeList">
+      <option selected value="">-- Seleccione estado caso --</option>
+    </select>
+    <input type="date" id="liveByCountryAndStatusAfterDate_Date" class="custom-select" asp-for="Date" />
+    <button id="liveByCountryAndStatusAfterDateSearchButton" class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar</button>
+  </form>
+</div>
+
+@if (Model.LiveByCountryAndStatusAfterDate != null)
+{
+  <table class="table table-bordered">
+    <thead>
+      <tr class="text-center">
+        <th scope="col">País</th>
+        <th scope="col">Código País</th>
+        <th scope="col">Provincia</th>
+        <th scope="col">Ciudad</th>
+        <th scope="col">Código Ciudad</th>
+        <th scope="col">Latitud</th>
+        <th scope="col">Longitud</th>
+        <th scope="col">Confirmados</th>
+        <th scope="col">Muertes</th>
+        <th scope="col">Recuperados</th>
+        <th scope="col">Activos</th>
+        <th scope="col">Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var liveByCountryAndStatus in Model.LiveByCountryAndStatusAfterDate)
+      {
+        <tr class="text-center">
+          <td>@liveByCountryAndStatus.Country</td>
+          <td>@liveByCountryAndStatus.CountryCode</td>
+          <td>@liveByCountryAndStatus.Province</td>
+          <td>@liveByCountryAndStatus.City</td>
+          <td>@liveByCountryAndStatus.CityCode</td>
+          <td>@liveByCountryAndStatus.Lat</td>
+          <td>@liveByCountryAndStatus.Lon</td>
+          <td>@liveByCountryAndStatus.Confirmed</td>
+          <td>@liveByCountryAndStatus.Deaths</td>
+          <td>@liveByCountryAndStatus.Recovered</td>
+          <td>@liveByCountryAndStatus.Active</td>
+          <td>@liveByCountryAndStatus.Date.ToString("dd/MM/yyyy")</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

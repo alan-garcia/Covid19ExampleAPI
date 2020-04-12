@@ -5,6 +5,7 @@
   var byCountryLiveDateTo = document.getElementById("byCountryLiveDateTo");
   var byCountryTotalDateFrom = document.getElementById("byCountryTotalDateFrom");
   var byCountryTotalDateTo = document.getElementById("byCountryTotalDateTo");
+  var liveByCountryAndStatusAfterDate_Date = document.getElementById("liveByCountryAndStatusAfterDate_Date");
 
   var date = new Date();
   var day = date.getDate();
@@ -22,4 +23,5 @@
   byCountryLiveDateTo.value = today;
   byCountryTotalDateFrom.value = today;
   byCountryTotalDateTo.value = today;
+  liveByCountryAndStatusAfterDate_Date.value = today;
 });
