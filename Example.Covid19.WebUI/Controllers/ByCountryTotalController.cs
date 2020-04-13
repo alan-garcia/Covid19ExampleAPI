@@ -71,11 +71,7 @@ namespace Example.Covid19.WebUI.Controllers
         {
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
-            var byCountryOrderedList = countries.OrderBy(c => c.Country).ToList();
-
-            return byCountryOrderedList
-                .Select(c => new SelectListItem() { Text = c.Country, Value = c.Country })
-                .OrderBy(c => c.Text);
+            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
         }
 
     }

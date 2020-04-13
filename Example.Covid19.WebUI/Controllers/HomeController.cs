@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Example.Covid19.WebUI.Models;
 using Microsoft.AspNetCore.Mvc;
-using Example.Covid19.WebUI.Models;
+using System.Diagnostics;
 
 namespace Example.Covid19.WebUI.Controllers
 {

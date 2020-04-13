@@ -4,6 +4,6 @@ namespace Example.Covid19.WebUI.Services
 {
     public interface IApiService
     {
-        Task<T> GetAsync<T>(string urlApi) where T: class;
+        Task<T> GetAsync<T>(string urlApi) where T : class;
     }
 }

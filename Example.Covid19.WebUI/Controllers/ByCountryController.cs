@@ -6,7 +6,6 @@ using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -50,8 +49,8 @@ namespace Example.Covid19.WebUI.Controllers
 
                 var byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
 
-                var byCountryListOrdered = byCountryList.Where(day => day.Country.Equals(byCountryViewModel.Country) && 
-                        day.Status.Equals(byCountryViewModel.StatusType) && 
+                var byCountryListOrdered = byCountryList.Where(day => day.Country.Equals(byCountryViewModel.Country) &&
+                        day.Status.Equals(byCountryViewModel.StatusType) &&
                         day.Date >= byCountryViewModel.DateFrom && day.Date <= byCountryViewModel.DateTo)
                     .OrderByDescending(day => day.Date.Date);
 
@@ -72,11 +71,7 @@ namespace Example.Covid19.WebUI.Controllers
         {
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
-            var byCountryOrderedList = countries.OrderBy(c => c.Country).ToList();
-
-            return byCountryOrderedList
-                .Select(c => new SelectListItem() { Text = c.Country, Value = c.Country })
-                .OrderBy(c => c.Text);
+            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
         }
 
     }
