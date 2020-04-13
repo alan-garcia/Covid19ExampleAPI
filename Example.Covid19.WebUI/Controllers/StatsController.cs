@@ -7,12 +7,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class StatsController : Controller
+    public class StatsController : BaseController
     {
-        private readonly IApiService _apiService;
-        private readonly IConfiguration _config;
-
-        public StatsController(IApiService apiService, IConfiguration config)
+        public StatsController(IApiService apiService, IConfiguration config) : base(apiService, config)
         {
             _apiService = apiService;
             _config = config;
@@ -20,12 +17,10 @@ namespace Example.Covid19.WebUI.Controllers
 
         public async Task<ActionResult<Stat>> GetStats()
         {
-            var stats = await _apiService.GetAsync<Stat>
-            (
-                _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.STATS_KEY}")
-            );
+            var stats = await GetRequestData<Stat>(AppSettingsConfig.STATS_KEY);
 
             return View("Stats", stats);
         }
+
     }
 }

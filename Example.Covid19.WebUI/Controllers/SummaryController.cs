@@ -7,12 +7,9 @@ using System.Threading.Tasks;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class SummaryController : Controller
+    public class SummaryController : BaseController
     {
-        private readonly IApiService _apiService;
-        private readonly IConfiguration _config;
-
-        public SummaryController(IApiService apiService, IConfiguration config)
+        public SummaryController(IApiService apiService, IConfiguration config) : base(apiService, config)
         {
             _apiService = apiService;
             _config = config;
@@ -20,10 +17,7 @@ namespace Example.Covid19.WebUI.Controllers
 
         public async Task<ActionResult<Summary>> GetSummary()
         {
-            var summary = await _apiService.GetAsync<Summary>
-            (
-                _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.SUMMARY_KEY}")
-            );
+            var summary = await GetRequestData<Summary>(AppSettingsConfig.SUMMARY_KEY);
 
             return View("Summary", summary);
         }

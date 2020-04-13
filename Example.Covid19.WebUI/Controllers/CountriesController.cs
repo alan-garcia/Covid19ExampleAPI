@@ -8,12 +8,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class CountriesController : Controller
+    public class CountriesController : BaseController
     {
-        private readonly IApiService _apiService;
-        private readonly IConfiguration _config;
-
-        public CountriesController(IApiService apiService, IConfiguration config)
+        public CountriesController(IApiService apiService, IConfiguration config) : base(apiService, config)
         {
             _apiService = apiService;
             _config = config;
@@ -21,12 +18,10 @@ namespace Example.Covid19.WebUI.Controllers
 
         public async Task<ActionResult<IEnumerable<Countries>>> GetCountries()
         {
-            var countries = await _apiService.GetAsync<IEnumerable<Countries>>
-            (
-                _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.COUNTRIES_KEY}")
-            );
+            var countries = await GetRequestData<Countries>(AppSettingsConfig.COUNTRIES_KEY);
 
             return View("Countries", countries);
         }
+
     }
 }

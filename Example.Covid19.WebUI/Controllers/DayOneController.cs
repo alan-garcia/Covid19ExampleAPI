@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Example.Covid19.WebUI.Config;
 using Example.Covid19.WebUI.DTO.Cases.CountriesCases;
 using Example.Covid19.WebUI.DTO.Cases.DayOneCases;
+using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -12,15 +13,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class DayOneController : Controller
+    public class DayOneController : BaseController
     {
-        private readonly IApiService _apiService;
-        private readonly IConfiguration _config;
-
         private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
         private const string STATUS_PLACEHOLDER = "{status}";
 
-        public DayOneController(IApiService apiService, IConfiguration config)
+        public DayOneController(IApiService apiService, IConfiguration config) : base(apiService, config)
         {
             _apiService = apiService;
             _config = config;
@@ -31,7 +29,7 @@ namespace Example.Covid19.WebUI.Controllers
             var dayOneViewModel = new DayOneViewModel
             {
                 Countries = await GetCountries(),
-                StatusTypeList = GetStatusTypeList()
+                StatusTypeList = StatusType.GetStatusTypeList()
             };
 
             return View(dayOneViewModel);
@@ -49,13 +47,13 @@ namespace Example.Covid19.WebUI.Controllers
                 var dayOneByCountryListOrdered = dayOneByCountryList.OrderByDescending(day => day.Date.Date);
 
                 dayOneViewModel.Countries = await GetCountries();
-                dayOneViewModel.StatusTypeList = GetStatusTypeList();
+                dayOneViewModel.StatusTypeList = StatusType.GetStatusTypeList();
                 dayOneViewModel.DayOne = dayOneByCountryListOrdered;
             }
             else
             {
                 dayOneViewModel.Countries = await GetCountries();
-                dayOneViewModel.StatusTypeList = GetStatusTypeList();
+                dayOneViewModel.StatusTypeList = StatusType.GetStatusTypeList();
             }
 
             return View("Index", dayOneViewModel);
@@ -63,10 +61,7 @@ namespace Example.Covid19.WebUI.Controllers
 
         private async Task<IEnumerable<SelectListItem>> GetCountries()
         {
-            var countries = await _apiService.GetAsync<IEnumerable<Countries>>
-            (
-                _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.COUNTRIES_KEY}")
-            );
+            var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             var dayOneByCountryOrderedList = countries.OrderBy(c => c.Country).ToList();
 
@@ -75,14 +70,5 @@ namespace Example.Covid19.WebUI.Controllers
                 .OrderBy(c => c.Text);
         }
 
-        private List<SelectListItem> GetStatusTypeList()
-        {
-            return new List<SelectListItem>
-            {
-                new SelectListItem() { Text = "Confirmados", Value = "confirmed" },
-                new SelectListItem() { Text = "Recuperados", Value = "recovered" },
-                new SelectListItem() { Text = "Muertos", Value = "deaths" }
-            };
-        }
     }
 }
