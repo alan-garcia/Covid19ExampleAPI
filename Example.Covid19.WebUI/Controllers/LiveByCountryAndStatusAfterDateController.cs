@@ -36,33 +36,25 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneLiveViewModel);
         }
 
+        [HttpPost]
         public async Task<ActionResult<IEnumerable<LiveByCountryAndStatusAfterDate>>> GetLiveByCountryAndStatusAfterDate(
             LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel)
         {
-            if (!string.IsNullOrEmpty(liveByCountryAndStatusAfterDateViewModel.Country))
+            if (ModelState.IsValid)
             {
-                var liveByCountryAndStatusAfterDateUrl = _config
-                    .GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_AFTERDATE_KEY}")
-                    .Replace(COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Country)
-                    .Replace(STATUS_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.StatusType)
-                    .Replace(DATE_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Date.ToString("yyyy-MM-ddThh:mm:ssZ"));
+                var liveByCountryAndStatusAfterDateUrl = ExtractPlaceholderUrlApi(liveByCountryAndStatusAfterDateViewModel);
 
-                var liveByCountryAndStatusAfterDateUrlList = await _apiService
-                    .GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(liveByCountryAndStatusAfterDateUrl);
+                var liveByCountryAndStatusAfterDateUrlList = 
+                    await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(liveByCountryAndStatusAfterDateUrl);
 
-                var liveByCountryAndStatusAfterDateFilter = liveByCountryAndStatusAfterDateUrlList
-                    .Where(day => day.Country.Equals(liveByCountryAndStatusAfterDateViewModel.Country))
-                    .OrderByDescending(day => day.Date.Date);
+                var liveByCountryAndStatusAfterDateFilter = 
+                    ApplySearchFilter(liveByCountryAndStatusAfterDateUrlList, liveByCountryAndStatusAfterDateViewModel);
 
-                liveByCountryAndStatusAfterDateViewModel.Countries = await GetCountries();
-                liveByCountryAndStatusAfterDateViewModel.StatusTypeList = StatusType.GetStatusTypeList();
                 liveByCountryAndStatusAfterDateViewModel.LiveByCountryAndStatusAfterDate = liveByCountryAndStatusAfterDateFilter;
             }
-            else
-            {
-                liveByCountryAndStatusAfterDateViewModel.Countries = await GetCountries();
-                liveByCountryAndStatusAfterDateViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-            }
+
+            liveByCountryAndStatusAfterDateViewModel.Countries = await GetCountries();
+            liveByCountryAndStatusAfterDateViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", liveByCountryAndStatusAfterDateViewModel);
         }
@@ -72,6 +64,23 @@ namespace Example.Covid19.WebUI.Controllers
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return CountriesList.BuildAndGetCountriesSelectListItem(countries);
+        }
+
+        private string ExtractPlaceholderUrlApi(LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel)
+        {
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_AFTERDATE_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.StatusType)
+                            .Replace(DATE_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Date.ToString("yyyy-MM-ddThh:mm:ssZ"));
+        }
+
+        private IEnumerable<LiveByCountryAndStatusAfterDate> ApplySearchFilter
+            (IEnumerable<LiveByCountryAndStatusAfterDate> liveByCountryAndStatusAfterDateUrlList,
+             LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel)
+        {
+            return liveByCountryAndStatusAfterDateUrlList
+                    .Where(live => live.Country.Equals(liveByCountryAndStatusAfterDateViewModel.Country))
+                    .OrderByDescending(live => live.Date.Date);
         }
 
     }

@@ -35,31 +35,23 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneLiveViewModel);
         }
 
+        [HttpPost]
         public async Task<ActionResult<IEnumerable<LiveByCountryAndStatus>>> GetLiveByCountryAndStatus(
             LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel)
         {
-            if (!string.IsNullOrEmpty(liveByCountryAndStatusViewModel.Country))
+            if (ModelState.IsValid)
             {
-                var liveByCountryAndStatusUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_KEY}")
-                    .Replace(COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusViewModel.Country)
-                    .Replace(STATUS_PLACEHOLDER, liveByCountryAndStatusViewModel.StatusType);
+                var liveByCountryAndStatusUrl = ExtractPlaceholderUrlApi(liveByCountryAndStatusViewModel);
 
-                var liveByCountryAndStatusUrlList = await _apiService
-                    .GetAsync<IEnumerable<LiveByCountryAndStatus>>(liveByCountryAndStatusUrl);
+                var liveByCountryAndStatusUrlList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatus>>(liveByCountryAndStatusUrl);
 
-                var liveByCountryAndStatusFilter = liveByCountryAndStatusUrlList
-                    .Where(day => day.Country.Equals(liveByCountryAndStatusViewModel.Country))
-                    .OrderByDescending(day => day.Date.Date);
+                var liveByCountryAndStatusFilter = ApplySearchFilter(liveByCountryAndStatusUrlList, liveByCountryAndStatusViewModel);
 
-                liveByCountryAndStatusViewModel.Countries = await GetCountries();
-                liveByCountryAndStatusViewModel.StatusTypeList = StatusType.GetStatusTypeList();
                 liveByCountryAndStatusViewModel.LiveByCountryAndStatus = liveByCountryAndStatusFilter;
             }
-            else
-            {
-                liveByCountryAndStatusViewModel.Countries = await GetCountries();
-                liveByCountryAndStatusViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-            }
+
+            liveByCountryAndStatusViewModel.Countries = await GetCountries();
+            liveByCountryAndStatusViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", liveByCountryAndStatusViewModel);
         }
@@ -69,6 +61,22 @@ namespace Example.Covid19.WebUI.Controllers
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return CountriesList.BuildAndGetCountriesSelectListItem(countries);
+        }
+
+        private string ExtractPlaceholderUrlApi(LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel)
+        {
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, liveByCountryAndStatusViewModel.StatusType);
+        }
+
+        private IEnumerable<LiveByCountryAndStatus> ApplySearchFilter
+            (IEnumerable<LiveByCountryAndStatus> liveByCountryAndStatusUrlList,
+             LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel)
+        {
+            return liveByCountryAndStatusUrlList
+                    .Where(live => live.Country.Equals(liveByCountryAndStatusViewModel.Country))
+                    .OrderByDescending(live => live.Date.Date);
         }
 
     }

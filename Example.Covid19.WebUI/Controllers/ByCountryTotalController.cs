@@ -36,33 +36,22 @@ namespace Example.Covid19.WebUI.Controllers
             return View(byCountryViewModel);
         }
 
+        [HttpPost]
         public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(ByCountryTotalViewModel byCountryTotalViewModel)
         {
-            if (!string.IsNullOrEmpty(byCountryTotalViewModel.Country) && !string.IsNullOrEmpty(byCountryTotalViewModel.StatusType) &&
-                !string.IsNullOrEmpty(byCountryTotalViewModel.DateFrom.ToString()) && !string.IsNullOrEmpty(byCountryTotalViewModel.DateTo.ToString()))
+            if (ModelState.IsValid)
             {
-                var byCountryTotalUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_TOTAL_KEY}")
-                                        .Replace(COUNTRYNAME_PLACEHOLDER, byCountryTotalViewModel.Country)
-                                        .Replace(STATUS_PLACEHOLDER, byCountryTotalViewModel.StatusType)
-                                        .Replace(DATEFROM_PLACEHOLDER, byCountryTotalViewModel.DateFrom.ToString("dd/MM/yyyy"))
-                                        .Replace(DATETO_PLACEHOLDER, byCountryTotalViewModel.DateTo.ToString("dd/MM/yyyy"));
+                var byCountryTotalUrl = ExtractPlaceholderUrlApi(byCountryTotalViewModel);
 
                 var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
 
-                var byCountryTotalListOrdered = byCountryTotalList.Where(day => day.Country.Equals(byCountryTotalViewModel.Country) &&
-                        day.Status.Equals(byCountryTotalViewModel.StatusType) &&
-                        day.Date >= byCountryTotalViewModel.DateFrom && day.Date <= byCountryTotalViewModel.DateTo)
-                    .OrderByDescending(day => day.Date.Date);
+                var byCountryTotalListFilter = ApplySearchFilter(byCountryTotalList, byCountryTotalViewModel);
 
-                byCountryTotalViewModel.Countries = await GetCountries();
-                byCountryTotalViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-                byCountryTotalViewModel.ByCountryTotal = byCountryTotalListOrdered;
+                byCountryTotalViewModel.ByCountryTotal = byCountryTotalListFilter;
             }
-            else
-            {
-                byCountryTotalViewModel.Countries = await GetCountries();
-                byCountryTotalViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-            }
+
+            byCountryTotalViewModel.Countries = await GetCountries();
+            byCountryTotalViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", byCountryTotalViewModel);
         }
@@ -72,6 +61,24 @@ namespace Example.Covid19.WebUI.Controllers
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return CountriesList.BuildAndGetCountriesSelectListItem(countries);
+        }
+
+        private string ExtractPlaceholderUrlApi(ByCountryTotalViewModel byCountryTotalViewModel)
+        {
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_TOTAL_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, byCountryTotalViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, byCountryTotalViewModel.StatusType)
+                            .Replace(DATEFROM_PLACEHOLDER, byCountryTotalViewModel.DateFrom.ToString("dd/MM/yyyy"))
+                            .Replace(DATETO_PLACEHOLDER, byCountryTotalViewModel.DateTo.ToString("dd/MM/yyyy"));
+        }
+
+        private IEnumerable<ByCountryTotal> ApplySearchFilter
+            (IEnumerable<ByCountryTotal> byCountryTotalList, ByCountryTotalViewModel byCountryTotalViewModel)
+        {
+            return byCountryTotalList
+                    .Where(bc => bc.Country.Equals(byCountryTotalViewModel.Country) && bc.Status.Equals(byCountryTotalViewModel.StatusType))
+                    .Where(bc => bc.Date >= byCountryTotalViewModel.DateFrom && bc.Date <= byCountryTotalViewModel.DateTo)
+                    .OrderByDescending(bc => bc.Date.Date);
         }
 
     }

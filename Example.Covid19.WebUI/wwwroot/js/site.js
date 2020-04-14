@@ -1,12 +1,4 @@
 ﻿$(function () {
-  var byCountryDateFrom = document.getElementById("byCountryDateFrom");
-  var byCountryDateTo = document.getElementById("byCountryDateTo");
-  var byCountryLiveDateFrom = document.getElementById("byCountryLiveDateFrom");
-  var byCountryLiveDateTo = document.getElementById("byCountryLiveDateTo");
-  var byCountryTotalDateFrom = document.getElementById("byCountryTotalDateFrom");
-  var byCountryTotalDateTo = document.getElementById("byCountryTotalDateTo");
-  var liveByCountryAndStatusAfterDate_Date = document.getElementById("liveByCountryAndStatusAfterDate_Date");
-
   var date = new Date();
   var day = date.getDate();
   var month = date.getMonth() + 1;
@@ -17,11 +9,38 @@
 
   var today = year + "-" + month + "-" + day;
 
-  byCountryDateFrom.value = today;
-  byCountryDateTo.value = today;
-  byCountryLiveDateFrom.value = today;
-  byCountryLiveDateTo.value = today;
-  byCountryTotalDateFrom.value = today;
-  byCountryTotalDateTo.value = today;
-  liveByCountryAndStatusAfterDate_Date.value = today;
+  if (document.getElementById("byCountryDateFrom") !== null) {
+    var byCountryDateFrom = document.getElementById("byCountryDateFrom");
+    byCountryDateFrom.value = today;
+  }
+
+  if (document.getElementById("byCountryDateTo") !== null) {
+    var byCountryDateTo = document.getElementById("byCountryDateTo");
+    byCountryDateTo.value = today;
+  }
+
+  if (document.getElementById("byCountryLiveDateFrom") !== null) {
+    var byCountryLiveDateFrom = document.getElementById("byCountryLiveDateFrom");
+    byCountryLiveDateFrom.value = today;
+  }
+
+  if (document.getElementById("byCountryLiveDateTo") !== null) {
+    var byCountryLiveDateTo = document.getElementById("byCountryLiveDateTo");
+    byCountryLiveDateTo.value = today;
+  }
+
+  if (document.getElementById("byCountryTotalDateFrom") !== null) {
+    var byCountryTotalDateFrom = document.getElementById("byCountryTotalDateFrom");
+    byCountryTotalDateFrom.value = today;
+  }
+
+  if (document.getElementById("byCountryTotalDateTo") !== null) {
+    var byCountryTotalDateTo = document.getElementById("byCountryTotalDateTo");
+    byCountryTotalDateTo.value = today;
+  }
+
+  if (document.getElementById("liveByCountryAndStatusAfterDate_Date") !== null) {
+    var liveByCountryAndStatusAfterDate_Date = document.getElementById("liveByCountryAndStatusAfterDate_Date");
+    liveByCountryAndStatusAfterDate_Date.value = today;
+  }
 });

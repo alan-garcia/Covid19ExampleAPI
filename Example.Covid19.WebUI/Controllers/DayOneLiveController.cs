@@ -35,26 +35,22 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneLiveViewModel);
         }
 
+        [HttpPost]
         public async Task<ActionResult<IEnumerable<DayOneLive>>> GetDayOneLiveByCountry(DayOneLiveViewModel dayOneLiveViewModel)
         {
-            if (!string.IsNullOrEmpty(dayOneLiveViewModel.Country))
+            if (ModelState.IsValid)
             {
-                var dayOneLiveUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_LIVE_KEY}")
-                                    .Replace(COUNTRYNAME_PLACEHOLDER, dayOneLiveViewModel.Country)
-                                    .Replace(STATUS_PLACEHOLDER, dayOneLiveViewModel.StatusType);
+                var dayOneLiveUrl = ExtractPlaceholderUrlApi(dayOneLiveViewModel);
 
                 var dayOneLiveByCountryList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneLiveUrl);
-                var dayOneLiveByCountryListOrdered = dayOneLiveByCountryList.OrderByDescending(day => day.Date.Date);
 
-                dayOneLiveViewModel.Countries = await GetCountries();
-                dayOneLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-                dayOneLiveViewModel.DayOneLive = dayOneLiveByCountryListOrdered;
+                var dayOneLiveByCountryListFilter = ApplySearchFilter(dayOneLiveByCountryList, dayOneLiveViewModel);
+
+                dayOneLiveViewModel.DayOneLive = dayOneLiveByCountryListFilter;
             }
-            else
-            {
-                dayOneLiveViewModel.Countries = await GetCountries();
-                dayOneLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-            }
+
+            dayOneLiveViewModel.Countries = await GetCountries();
+            dayOneLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", dayOneLiveViewModel);
         }
@@ -64,6 +60,21 @@ namespace Example.Covid19.WebUI.Controllers
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return CountriesList.BuildAndGetCountriesSelectListItem(countries);
+        }
+
+        private string ExtractPlaceholderUrlApi(DayOneLiveViewModel dayOneLiveViewModel)
+        {
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_LIVE_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, dayOneLiveViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, dayOneLiveViewModel.StatusType);
+        }
+
+        private IEnumerable<DayOneLive> ApplySearchFilter
+            (IEnumerable<DayOneLive> dayOneLiveByCountryList, DayOneLiveViewModel dayOneLiveViewModel)
+        {
+            return dayOneLiveByCountryList
+                    .Where(day => day.Country.Equals(dayOneLiveViewModel.Country) && day.Status.Equals(dayOneLiveViewModel.StatusType))
+                    .OrderByDescending(day => day.Date.Date);
         }
 
     }

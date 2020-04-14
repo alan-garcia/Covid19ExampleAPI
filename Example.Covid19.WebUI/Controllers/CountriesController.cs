@@ -16,9 +16,10 @@ namespace Example.Covid19.WebUI.Controllers
             _config = config;
         }
 
+        [HttpPost]
         public async Task<ActionResult<IEnumerable<Countries>>> GetCountries()
         {
-            var countries = await GetRequestData<Countries>(AppSettingsConfig.COUNTRIES_KEY);
+            var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return View("Countries", countries);
         }

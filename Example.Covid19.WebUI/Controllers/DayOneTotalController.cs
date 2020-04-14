@@ -35,26 +35,22 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneTotalViewModel);
         }
 
+        [HttpPost]
         public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(DayOneTotalViewModel dayOneTotalLiveViewModel)
         {
-            if (!string.IsNullOrEmpty(dayOneTotalLiveViewModel.Country))
+            if (ModelState.IsValid)
             {
-                var dayOneTotalUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_TOTAL_KEY}")
-                                    .Replace(COUNTRYNAME_PLACEHOLDER, dayOneTotalLiveViewModel.Country)
-                                    .Replace(STATUS_PLACEHOLDER, dayOneTotalLiveViewModel.StatusType);
+                var dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalLiveViewModel);
 
                 var dayOneTotalByCountryList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
-                var dayOneTotalByCountryListOrdered = dayOneTotalByCountryList.OrderByDescending(day => day.Date.Date);
 
-                dayOneTotalLiveViewModel.Countries = await GetCountries();
-                dayOneTotalLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-                dayOneTotalLiveViewModel.DayOneTotal = dayOneTotalByCountryListOrdered;
+                var dayOneTotalByCountryListFilter = ApplySearchFilter(dayOneTotalByCountryList, dayOneTotalLiveViewModel);
+
+                dayOneTotalLiveViewModel.DayOneTotal = dayOneTotalByCountryListFilter;
             }
-            else
-            {
-                dayOneTotalLiveViewModel.Countries = await GetCountries();
-                dayOneTotalLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-            }
+
+            dayOneTotalLiveViewModel.Countries = await GetCountries();
+            dayOneTotalLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", dayOneTotalLiveViewModel);
         }
@@ -64,6 +60,21 @@ namespace Example.Covid19.WebUI.Controllers
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return CountriesList.BuildAndGetCountriesSelectListItem(countries);
+        }
+
+        private string ExtractPlaceholderUrlApi(DayOneTotalViewModel dayOneTotalLiveViewModel)
+        {
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_TOTAL_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, dayOneTotalLiveViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, dayOneTotalLiveViewModel.StatusType);
+        }
+
+        private IEnumerable<DayOneTotal> ApplySearchFilter
+            (IEnumerable<DayOneTotal> dayOneTotalByCountryList, DayOneTotalViewModel dayOneTotalLiveViewModel)
+        {
+            return dayOneTotalByCountryList
+                    .Where(day => day.Country.Equals(dayOneTotalLiveViewModel.Country) && day.Status.Equals(dayOneTotalLiveViewModel.StatusType))
+                    .OrderByDescending(day => day.Date.Date);
         }
 
     }

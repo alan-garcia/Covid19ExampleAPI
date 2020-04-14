@@ -36,33 +36,22 @@ namespace Example.Covid19.WebUI.Controllers
             return View(byCountryViewModel);
         }
 
+        [HttpPost]
         public async Task<ActionResult<IEnumerable<ByCountry>>> GetByCountry(ByCountryViewModel byCountryViewModel)
         {
-            if (!string.IsNullOrEmpty(byCountryViewModel.Country) && !string.IsNullOrEmpty(byCountryViewModel.StatusType) &&
-                !string.IsNullOrEmpty(byCountryViewModel.DateFrom.ToString()) && !string.IsNullOrEmpty(byCountryViewModel.DateTo.ToString()))
+            if (ModelState.IsValid)
             {
-                var byCountryUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_KEY}")
-                                    .Replace(COUNTRYNAME_PLACEHOLDER, byCountryViewModel.Country)
-                                    .Replace(STATUS_PLACEHOLDER, byCountryViewModel.StatusType)
-                                    .Replace(DATEFROM_PLACEHOLDER, byCountryViewModel.DateFrom.ToString("dd/MM/yyyy"))
-                                    .Replace(DATETO_PLACEHOLDER, byCountryViewModel.DateTo.ToString("dd/MM/yyyy"));
+                var byCountryUrl = ExtractPlaceholderUrlApi(byCountryViewModel);
 
                 var byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
 
-                var byCountryListOrdered = byCountryList.Where(day => day.Country.Equals(byCountryViewModel.Country) &&
-                        day.Status.Equals(byCountryViewModel.StatusType) &&
-                        day.Date >= byCountryViewModel.DateFrom && day.Date <= byCountryViewModel.DateTo)
-                    .OrderByDescending(day => day.Date.Date);
+                var byCountryListFilter = ApplySearchFilter(byCountryList, byCountryViewModel);
+                
+                byCountryViewModel.ByCountry = byCountryListFilter;
+            }
 
-                byCountryViewModel.Countries = await GetCountries();
-                byCountryViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-                byCountryViewModel.ByCountry = byCountryListOrdered;
-            }
-            else
-            {
-                byCountryViewModel.Countries = await GetCountries();
-                byCountryViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-            }
+            byCountryViewModel.Countries = await GetCountries();
+            byCountryViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", byCountryViewModel);
         }
@@ -72,6 +61,24 @@ namespace Example.Covid19.WebUI.Controllers
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return CountriesList.BuildAndGetCountriesSelectListItem(countries);
+        }
+
+        private string ExtractPlaceholderUrlApi(ByCountryViewModel byCountryViewModel)
+        {
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, byCountryViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, byCountryViewModel.StatusType)
+                            .Replace(DATEFROM_PLACEHOLDER, byCountryViewModel.DateFrom.ToString("yyyy-MM-dd"))
+                            .Replace(DATETO_PLACEHOLDER, byCountryViewModel.DateTo.ToString("yyyy-MM-dd"));
+        }
+
+        private IEnumerable<ByCountry> ApplySearchFilter
+            (IEnumerable<ByCountry> byCountryList, ByCountryViewModel byCountryViewModel)
+        {
+            return byCountryList
+                    .Where(bc => bc.Country.Equals(byCountryViewModel.Country) && bc.Status.Equals(byCountryViewModel.StatusType))
+                    .Where(bc => bc.Date >= byCountryViewModel.DateFrom && bc.Date <= byCountryViewModel.DateTo)
+                    .OrderByDescending(bc => bc.Date.Date);
         }
 
     }
