@@ -4,6 +4,7 @@ using Example.Covid19.WebUI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
@@ -15,9 +16,12 @@ namespace Example.Covid19.WebUI.Controllers
             _config = config;
         }
 
-        public async Task<ActionResult<Summary>> GetSummary()
+        public async Task<ActionResult<Summary>> GetSummary(int? page)
         {
             var summary = await GetRequestData<Summary>(AppSettingsConfig.SUMMARY_KEY);
+            var pageNumber = page ?? 1;
+
+            ViewBag.SummaryCountries = summary.Countries.ToPagedList(pageNumber, 15);
 
             return View("Summary", summary);
         }

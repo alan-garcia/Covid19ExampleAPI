@@ -1,4 +1,8 @@
-﻿@model Example.Covid19.WebUI.DTO.SummaryCases.Summary
+﻿@using X.PagedList;
+@using X.PagedList.Mvc.Core;
+@using X.PagedList.Mvc.Core.Common;
+
+@model Example.Covid19.WebUI.DTO.SummaryCases.Summary
 @{
   ViewData["Title"] = "Resumen";
 }
@@ -60,6 +64,17 @@
 <h2>Casos por países</h2>
 <p><strong>Fecha actualizada:</strong> @Model.Date</p>
 
+@Html.PagedListPager((IPagedList)ViewBag.SummaryCountries, page => Url.Action("GetSummary", new { page = page }),
+    new PagedListRenderOptions {
+      LinkToFirstPageFormat = "<< Primera",
+      LinkToPreviousPageFormat = "< Anterior",
+      LinkToNextPageFormat = "Siguiente >",
+      LinkToLastPageFormat = "&Uacute;ltima >>",
+      LiElementClasses = new string[] { "page-item" },
+      PageClasses = new string[] { "page-link" }
+    }
+)
+
 <table class="table table-bordered">
   <thead>
     <tr class="text-center">
@@ -73,40 +88,40 @@
     </tr>
   </thead>
   <tbody>
-    @foreach (var country in Model.Countries)
+    @foreach (var country in ViewBag.SummaryCountries)
     {
       <tr class="text-center">
         <td>@country.Country</td>
 
         @if (@country.NewConfirmed > 0)
         {
-            <td class="text-warning">+@country.NewConfirmed</td>
+          <td class="text-warning">+@country.NewConfirmed</td>
         }
         else
         {
-            <td>@country.NewConfirmed</td>
+          <td>@country.NewConfirmed</td>
         }
 
         <td class="bg-warning">@country.TotalConfirmed</td>
 
         @if (@country.NewDeaths > 0)
         {
-            <td class="text-danger">+@country.NewDeaths</td>
+          <td class="text-danger">+@country.NewDeaths</td>
         }
         else
         {
-            <td>@country.NewDeaths</td>
+          <td>@country.NewDeaths</td>
         }
 
         <td class="bg-danger text-white">@country.TotalDeaths</td>
 
         @if (@country.NewRecovered > 0)
         {
-            <td class="text-success">+@country.NewRecovered</td>
+          <td class="text-success">+@country.NewRecovered</td>
         }
         else
         {
-            <td>@country.NewRecovered</td>
+          <td>@country.NewRecovered</td>
         }
 
         <td class="bg-success text-white">@country.TotalRecovered</td>
@@ -114,3 +129,14 @@
     }
   </tbody>
 </table>
+
+@Html.PagedListPager((IPagedList)ViewBag.SummaryCountries, page => Url.Action("GetSummary", new { page = page }),
+    new PagedListRenderOptions {
+      LinkToFirstPageFormat = "<< Primera",
+      LinkToPreviousPageFormat = "< Anterior",
+      LinkToNextPageFormat = "Siguiente >",
+      LinkToLastPageFormat = "&Uacute;ltima >>",
+      LiElementClasses = new string[] { "page-item" },
+      PageClasses = new string[] { "page-link" }
+    }
+)
