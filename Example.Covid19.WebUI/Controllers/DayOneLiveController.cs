@@ -4,12 +4,15 @@ using Example.Covid19.WebUI.DTO.Cases.DayOneCases;
 using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
@@ -35,8 +38,28 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneLiveViewModel);
         }
 
+        public async Task<ActionResult<IEnumerable<DayOneLive>>> GetDayOneLiveByCountry(int? page)
+        {
+            var dayOneLiveByCountryListFilter = HttpContext.Session.GetString("DayOneLiveByCountryListFilter");
+            var dayOneLiveByCountryListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<DayOneLive>>(dayOneLiveByCountryListFilter);
+
+            var pageNumber = page ?? 1;
+            HttpContext.Session.SetString("DayOneLiveByCountryListFilter", JsonConvert.SerializeObject(dayOneLiveByCountryListFilterDeserialized));
+
+            ViewBag.DayOneLiveByCountryListFilter = dayOneLiveByCountryListFilterDeserialized.ToPagedList(pageNumber, 15);
+
+            DayOneLiveViewModel dayOneLiveViewModel = new DayOneLiveViewModel
+            {
+                DayOneLive = dayOneLiveByCountryListFilterDeserialized,
+                Countries = await GetCountries(),
+                StatusTypeList = StatusType.GetStatusTypeList()
+            };
+
+            return View("Index", dayOneLiveViewModel);
+        }
+
         [HttpPost]
-        public async Task<ActionResult<IEnumerable<DayOneLive>>> GetDayOneLiveByCountry(DayOneLiveViewModel dayOneLiveViewModel)
+        public async Task<ActionResult<IEnumerable<DayOneLive>>> GetDayOneLiveByCountry(DayOneLiveViewModel dayOneLiveViewModel, int? page)
         {
             if (ModelState.IsValid)
             {
@@ -47,6 +70,11 @@ namespace Example.Covid19.WebUI.Controllers
                 var dayOneLiveByCountryListFilter = ApplySearchFilter(dayOneLiveByCountryList, dayOneLiveViewModel);
 
                 dayOneLiveViewModel.DayOneLive = dayOneLiveByCountryListFilter;
+
+                var pageNumber = page ?? 1;
+                HttpContext.Session.SetString("DayOneLiveByCountryListFilter", JsonConvert.SerializeObject(dayOneLiveByCountryListFilter));
+
+                ViewBag.DayOneLiveByCountryListFilter = dayOneLiveByCountryListFilter.ToPagedList(pageNumber, 15);
             }
 
             dayOneLiveViewModel.Countries = await GetCountries();

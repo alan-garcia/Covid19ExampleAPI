@@ -1,4 +1,8 @@
-﻿@model Example.Covid19.WebUI.ViewModels.DayOneLiveViewModel
+﻿@using X.PagedList;
+@using X.PagedList.Mvc.Core;
+@using X.PagedList.Mvc.Core.Common;
+
+@model Example.Covid19.WebUI.ViewModels.DayOneLiveViewModel
 @{
   ViewData["Title"] = "Day One Live";
 }
@@ -26,6 +30,20 @@
   }
   else
   {
+    var dayOneLiveByCountryListFilter = ViewBag.DayOneLiveByCountryListFilter;
+
+    @Html.PagedListPager((IPagedList)dayOneLiveByCountryListFilter, page => Url.Action("GetDayOneLiveByCountry", new { page = page }),
+        new PagedListRenderOptions
+        {
+          LinkToFirstPageFormat = "<< Primera",
+          LinkToPreviousPageFormat = "< Anterior",
+          LinkToNextPageFormat = "Siguiente >",
+          LinkToLastPageFormat = "&Uacute;ltima >>",
+          LiElementClasses = new string[] { "page-item" },
+          PageClasses = new string[] { "page-link" }
+        }
+    )
+
     <table class="table table-bordered">
       <thead>
         <tr class="text-center">
@@ -38,7 +56,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach (var dayOneLive in Model.DayOneLive)
+        @foreach (var dayOneLive in dayOneLiveByCountryListFilter)
         {
           <tr class="text-center">
             <td>@dayOneLive.Country</td>
@@ -51,5 +69,17 @@
         }
       </tbody>
     </table>
+
+    @Html.PagedListPager((IPagedList)dayOneLiveByCountryListFilter, page => Url.Action("GetDayOneLiveByCountry", new { page = page }),
+        new PagedListRenderOptions
+        {
+          LinkToFirstPageFormat = "<< Primera",
+          LinkToPreviousPageFormat = "< Anterior",
+          LinkToNextPageFormat = "Siguiente >",
+          LinkToLastPageFormat = "&Uacute;ltima >>",
+          LiElementClasses = new string[] { "page-item" },
+          PageClasses = new string[] { "page-link" }
+        }
+    )
   }
 }

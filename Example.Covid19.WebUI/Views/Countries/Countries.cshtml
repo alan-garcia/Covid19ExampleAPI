@@ -1,9 +1,29 @@
-﻿@model IEnumerable<Example.Covid19.WebUI.DTO.Cases.CountriesCases.Countries>
+﻿@using X.PagedList;
+@using X.PagedList.Mvc.Core;
+@using X.PagedList.Mvc.Core.Common;
+
+@model IEnumerable<Example.Covid19.WebUI.DTO.Cases.CountriesCases.Countries>
 @{
-    ViewData["Title"] = "Países";
+  ViewData["Title"] = "Países";
 }
 
 <h1>Países</h1>
+
+@{
+  var countriesPagedList = ViewBag.CountriesPagedList;
+
+  @Html.PagedListPager((IPagedList)countriesPagedList, page => Url.Action("GetCountries", new { page = page }),
+      new PagedListRenderOptions
+        {
+          LinkToFirstPageFormat = "<< Primera",
+        LinkToPreviousPageFormat = "< Anterior",
+        LinkToNextPageFormat = "Siguiente >",
+        LinkToLastPageFormat = "&Uacute;ltima >>",
+        LiElementClasses = new string[] { "page-item" },
+        PageClasses = new string[] { "page-link" }
+      }
+  )
+}
 
 <table class="table table-bordered">
   <thead>
@@ -14,7 +34,7 @@
     </tr>
   </thead>
   <tbody>
-    @foreach (var country in Model.ToList())
+    @foreach (var country in countriesPagedList)
     {
       <tr class="text-center">
         <td>@country.Country</td>
@@ -24,3 +44,15 @@
     }
   </tbody>
 </table>
+
+@Html.PagedListPager((IPagedList)countriesPagedList, page => Url.Action("GetCountries", new { page = page }),
+    new PagedListRenderOptions
+    {
+      LinkToFirstPageFormat = "<< Primera",
+      LinkToPreviousPageFormat = "< Anterior",
+      LinkToNextPageFormat = "Siguiente >",
+      LinkToLastPageFormat = "&Uacute;ltima >>",
+      LiElementClasses = new string[] { "page-item" },
+      PageClasses = new string[] { "page-link" }
+    }
+)

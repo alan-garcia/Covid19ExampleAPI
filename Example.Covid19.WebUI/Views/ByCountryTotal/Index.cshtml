@@ -70,6 +70,7 @@
         }
       </tbody>
     </table>
+
     @Html.PagedListPager((IPagedList)byCountryTotalFilterList, page => Url.Action("GetByCountryTotal", new { page = page }),
         new PagedListRenderOptions
         {

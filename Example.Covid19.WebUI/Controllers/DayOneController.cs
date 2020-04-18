@@ -4,12 +4,15 @@ using Example.Covid19.WebUI.DTO.Cases.DayOneCases;
 using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
@@ -35,8 +38,28 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneViewModel);
         }
 
+        public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(int? page)
+        {
+            var dayOneByCountryListFilter = HttpContext.Session.GetString("DayOneByCountryListFilter");
+            var dayOneByCountryListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<DayOne>>(dayOneByCountryListFilter);
+
+            var pageNumber = page ?? 1;
+            HttpContext.Session.SetString("DayOneByCountryListFilter", JsonConvert.SerializeObject(dayOneByCountryListFilterDeserialized));
+
+            ViewBag.DayOneByCountryListFilter = dayOneByCountryListFilterDeserialized.ToPagedList(pageNumber, 15);
+
+            DayOneViewModel dayOneViewModel = new DayOneViewModel
+            {
+                DayOne = dayOneByCountryListFilterDeserialized,
+                Countries = await GetCountries(),
+                StatusTypeList = StatusType.GetStatusTypeList()
+            };
+
+            return View("Index", dayOneViewModel);
+        }
+
         [HttpPost]
-        public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(DayOneViewModel dayOneViewModel)
+        public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(DayOneViewModel dayOneViewModel, int? page)
         {
             if (ModelState.IsValid)
             {
@@ -47,6 +70,11 @@ namespace Example.Covid19.WebUI.Controllers
                 var dayOneByCountryListFilter = ApplySearchFilter(dayOneByCountryList, dayOneViewModel);
 
                 dayOneViewModel.DayOne = dayOneByCountryListFilter;
+
+                var pageNumber = page ?? 1;
+                HttpContext.Session.SetString("DayOneByCountryListFilter", JsonConvert.SerializeObject(dayOneByCountryListFilter));
+
+                ViewBag.DayOneByCountryListFilter = dayOneByCountryListFilter.ToPagedList(pageNumber, 15);
             }
 
             dayOneViewModel.Countries = await GetCountries();

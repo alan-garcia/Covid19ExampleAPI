@@ -4,7 +4,7 @@
 
 @model Example.Covid19.WebUI.DTO.SummaryCases.Summary
 @{
-  ViewData["Title"] = "Resumen";
+    ViewData["Title"] = "Resumen";
 }
 
 <h1>Resumen</h1>
@@ -64,17 +64,20 @@
 <h2>Casos por países</h2>
 <p><strong>Fecha actualizada:</strong> @Model.Date</p>
 
-@Html.PagedListPager((IPagedList)ViewBag.SummaryCountriesPagedList, page => Url.Action("GetSummary", new { page = page }),
-    new PagedListRenderOptions {
-      LinkToFirstPageFormat = "<< Primera",
-      LinkToPreviousPageFormat = "< Anterior",
-      LinkToNextPageFormat = "Siguiente >",
-      LinkToLastPageFormat = "&Uacute;ltima >>",
-      LiElementClasses = new string[] { "page-item" },
-      PageClasses = new string[] { "page-link" }
-    }
-)
+@{ 
+  var summaryCountriesPagedList = ViewBag.SummaryCountriesPagedList;
 
+  @Html.PagedListPager((IPagedList)summaryCountriesPagedList, page => Url.Action("GetSummary", new { page = page }),
+      new PagedListRenderOptions {
+        LinkToFirstPageFormat = "<< Primera",
+        LinkToPreviousPageFormat = "< Anterior",
+        LinkToNextPageFormat = "Siguiente >",
+        LinkToLastPageFormat = "&Uacute;ltima >>",
+        LiElementClasses = new string[] { "page-item" },
+        PageClasses = new string[] { "page-link" }
+      }
+  )
+}
 <table class="table table-bordered">
   <thead>
     <tr class="text-center">
@@ -88,7 +91,7 @@
     </tr>
   </thead>
   <tbody>
-    @foreach (var country in ViewBag.SummaryCountriesPagedList)
+    @foreach (var country in summaryCountriesPagedList)
     {
       <tr class="text-center">
         <td>@country.Country</td>
@@ -130,7 +133,7 @@
   </tbody>
 </table>
 
-@Html.PagedListPager((IPagedList)ViewBag.SummaryCountriesPagedList, page => Url.Action("GetSummary", new { page = page }),
+@Html.PagedListPager((IPagedList)summaryCountriesPagedList, page => Url.Action("GetSummary", new { page = page }),
     new PagedListRenderOptions {
       LinkToFirstPageFormat = "<< Primera",
       LinkToPreviousPageFormat = "< Anterior",
