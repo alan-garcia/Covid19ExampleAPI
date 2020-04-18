@@ -64,7 +64,7 @@
 <h2>Casos por países</h2>
 <p><strong>Fecha actualizada:</strong> @Model.Date</p>
 
-@Html.PagedListPager((IPagedList)ViewBag.SummaryCountries, page => Url.Action("GetSummary", new { page = page }),
+@Html.PagedListPager((IPagedList)ViewBag.SummaryCountriesPagedList, page => Url.Action("GetSummary", new { page = page }),
     new PagedListRenderOptions {
       LinkToFirstPageFormat = "<< Primera",
       LinkToPreviousPageFormat = "< Anterior",
@@ -88,7 +88,7 @@
     </tr>
   </thead>
   <tbody>
-    @foreach (var country in ViewBag.SummaryCountries)
+    @foreach (var country in ViewBag.SummaryCountriesPagedList)
     {
       <tr class="text-center">
         <td>@country.Country</td>
@@ -130,7 +130,7 @@
   </tbody>
 </table>
 
-@Html.PagedListPager((IPagedList)ViewBag.SummaryCountries, page => Url.Action("GetSummary", new { page = page }),
+@Html.PagedListPager((IPagedList)ViewBag.SummaryCountriesPagedList, page => Url.Action("GetSummary", new { page = page }),
     new PagedListRenderOptions {
       LinkToFirstPageFormat = "<< Primera",
       LinkToPreviousPageFormat = "< Anterior",

@@ -3,12 +3,15 @@ using Example.Covid19.WebUI.DTO.Cases.CountriesCases;
 using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
@@ -35,9 +38,29 @@ namespace Example.Covid19.WebUI.Controllers
 
             return View(byCountryViewModel);
         }
+        
+        public async Task<ActionResult<IEnumerable<ByCountry>>> GetByCountry(int? page)
+        {
+            var byCountryListFilter = HttpContext.Session.GetString("ByCountryListFilter");
+            var byCountryListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<ByCountry>>(byCountryListFilter);
+
+            var pageNumber = page ?? 1;
+            HttpContext.Session.SetString("ByCountryListFilter", JsonConvert.SerializeObject(byCountryListFilterDeserialized));
+
+            ViewBag.ByCountryFilterList = byCountryListFilterDeserialized.ToPagedList(pageNumber, 15);
+
+            ByCountryViewModel byCountryViewModel = new ByCountryViewModel
+            {
+                ByCountry = byCountryListFilterDeserialized,
+                Countries = await GetCountries(),
+                StatusTypeList = StatusType.GetStatusTypeList()
+            };
+
+            return View("Index", byCountryViewModel);
+        }
 
         [HttpPost]
-        public async Task<ActionResult<IEnumerable<ByCountry>>> GetByCountry(ByCountryViewModel byCountryViewModel)
+        public async Task<ActionResult<IEnumerable<ByCountry>>> GetByCountry(ByCountryViewModel byCountryViewModel, int? page)
         {
             if (ModelState.IsValid)
             {
@@ -48,11 +71,16 @@ namespace Example.Covid19.WebUI.Controllers
                 var byCountryListFilter = ApplySearchFilter(byCountryList, byCountryViewModel);
                 
                 byCountryViewModel.ByCountry = byCountryListFilter;
+
+                var pageNumber = page ?? 1;
+                HttpContext.Session.SetString("ByCountryListFilter", JsonConvert.SerializeObject(byCountryListFilter));
+
+                ViewBag.ByCountryFilterList = byCountryListFilter.ToPagedList(pageNumber, 15);
             }
 
             byCountryViewModel.Countries = await GetCountries();
             byCountryViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-
+            
             return View("Index", byCountryViewModel);
         }
 

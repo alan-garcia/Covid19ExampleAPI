@@ -21,7 +21,7 @@ namespace Example.Covid19.WebUI.Controllers
             var summary = await GetRequestData<Summary>(AppSettingsConfig.SUMMARY_KEY);
             var pageNumber = page ?? 1;
 
-            ViewBag.SummaryCountries = summary.Countries.ToPagedList(pageNumber, 15);
+            ViewBag.SummaryCountriesPagedList = summary.Countries.ToPagedList(pageNumber, 15);
 
             return View("Summary", summary);
         }

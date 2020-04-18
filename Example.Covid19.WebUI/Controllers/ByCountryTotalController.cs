@@ -3,12 +3,15 @@ using Example.Covid19.WebUI.DTO.Cases.CountriesCases;
 using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
@@ -36,8 +39,28 @@ namespace Example.Covid19.WebUI.Controllers
             return View(byCountryViewModel);
         }
 
+        public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(int? page)
+        {
+            var byCountryTotalListFilter = HttpContext.Session.GetString("ByCountryTotalListFilter");
+            var byCountryTotalListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<ByCountryTotal>>(byCountryTotalListFilter);
+
+            var pageNumber = page ?? 1;
+            HttpContext.Session.SetString("ByCountryTotalListFilter", JsonConvert.SerializeObject(byCountryTotalListFilterDeserialized));
+
+            ViewBag.ByCountryTotalFilterList = byCountryTotalListFilterDeserialized.ToPagedList(pageNumber, 15);
+
+            ByCountryTotalViewModel byCountryTotalViewModel = new ByCountryTotalViewModel
+            {
+                ByCountryTotal = byCountryTotalListFilterDeserialized,
+                Countries = await GetCountries(),
+                StatusTypeList = StatusType.GetStatusTypeList()
+            };
+
+            return View("Index", byCountryTotalViewModel);
+        }
+
         [HttpPost]
-        public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(ByCountryTotalViewModel byCountryTotalViewModel)
+        public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(ByCountryTotalViewModel byCountryTotalViewModel, int? page)
         {
             if (ModelState.IsValid)
             {
@@ -48,6 +71,11 @@ namespace Example.Covid19.WebUI.Controllers
                 var byCountryTotalListFilter = ApplySearchFilter(byCountryTotalList, byCountryTotalViewModel);
 
                 byCountryTotalViewModel.ByCountryTotal = byCountryTotalListFilter;
+
+                var pageNumber = page ?? 1;
+                HttpContext.Session.SetString("ByCountryTotalListFilter", JsonConvert.SerializeObject(byCountryTotalListFilter));
+
+                ViewBag.byCountryTotalFilterList = byCountryTotalListFilter.ToPagedList(pageNumber, 15);
             }
 
             byCountryTotalViewModel.Countries = await GetCountries();
