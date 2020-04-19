@@ -1,4 +1,8 @@
-﻿@model Example.Covid19.WebUI.ViewModels.LiveByCountryAndStatusAfterDateViewModel
+﻿@using X.PagedList;
+@using X.PagedList.Mvc.Core;
+@using X.PagedList.Mvc.Core.Common;
+
+@model Example.Covid19.WebUI.ViewModels.LiveByCountryAndStatusAfterDateViewModel
 @{
   ViewData["Title"] = "Live By Country and Status After Date";
 }
@@ -27,6 +31,20 @@
   }
   else
   {
+    var liveByCountryAndStatusAfterDateListFilter = ViewBag.LiveByCountryAndStatusAfterDateListFilter;
+
+    @Html.PagedListPager((IPagedList)liveByCountryAndStatusAfterDateListFilter, page => Url.Action("GetLiveByCountryAndStatusAfterDate", new { page = page }),
+        new PagedListRenderOptions
+        {
+          LinkToFirstPageFormat = "<< Primera",
+          LinkToPreviousPageFormat = "< Anterior",
+          LinkToNextPageFormat = "Siguiente >",
+          LinkToLastPageFormat = "&Uacute;ltima >>",
+          LiElementClasses = new string[] { "page-item" },
+          PageClasses = new string[] { "page-link" }
+        }
+    )
+
     <table class="table table-bordered">
       <thead>
         <tr class="text-center">
@@ -45,7 +63,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach (var liveByCountryAndStatusAfterDate in Model.LiveByCountryAndStatusAfterDate)
+        @foreach (var liveByCountryAndStatusAfterDate in liveByCountryAndStatusAfterDateListFilter)
         {
           <tr class="text-center">
             <td>@liveByCountryAndStatusAfterDate.Country</td>
@@ -64,5 +82,17 @@
         }
       </tbody>
     </table>
+
+    @Html.PagedListPager((IPagedList)liveByCountryAndStatusAfterDateListFilter, page => Url.Action("GetLiveByCountryAndStatusAfterDate", new { page = page }),
+        new PagedListRenderOptions
+        {
+          LinkToFirstPageFormat = "<< Primera",
+          LinkToPreviousPageFormat = "< Anterior",
+          LinkToNextPageFormat = "Siguiente >",
+          LinkToLastPageFormat = "&Uacute;ltima >>",
+          LiElementClasses = new string[] { "page-item" },
+          PageClasses = new string[] { "page-link" }
+        }
+    )
   }
 }

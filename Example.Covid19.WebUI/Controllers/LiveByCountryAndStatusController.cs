@@ -4,12 +4,15 @@ using Example.Covid19.WebUI.DTO.Cases.LiveByCountryCases;
 using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
@@ -35,9 +38,29 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneLiveViewModel);
         }
 
+        public async Task<ActionResult<IEnumerable<LiveByCountryAndStatus>>> GetLiveByCountryAndStatus(int? page)
+        {
+            var liveByCountryAndStatusListFilter = HttpContext.Session.GetString("LiveByCountryAndStatusListFilter");
+            var liveByCountryAndStatusListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<LiveByCountryAndStatus>>(liveByCountryAndStatusListFilter);
+
+            var pageNumber = page ?? 1;
+            HttpContext.Session.SetString("LiveByCountryAndStatusListFilter", JsonConvert.SerializeObject(liveByCountryAndStatusListFilterDeserialized));
+
+            ViewBag.LiveByCountryAndStatusListFilter = liveByCountryAndStatusListFilterDeserialized.ToPagedList(pageNumber, 15);
+
+            LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel = new LiveByCountryAndStatusViewModel
+            {
+                LiveByCountryAndStatus = liveByCountryAndStatusListFilterDeserialized,
+                Countries = await GetCountries(),
+                StatusTypeList = StatusType.GetStatusTypeList()
+            };
+
+            return View("Index", liveByCountryAndStatusViewModel);
+        }
+
         [HttpPost]
         public async Task<ActionResult<IEnumerable<LiveByCountryAndStatus>>> GetLiveByCountryAndStatus(
-            LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel)
+            LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel, int? page)
         {
             if (ModelState.IsValid)
             {
@@ -48,6 +71,11 @@ namespace Example.Covid19.WebUI.Controllers
                 var liveByCountryAndStatusFilter = ApplySearchFilter(liveByCountryAndStatusUrlList, liveByCountryAndStatusViewModel);
 
                 liveByCountryAndStatusViewModel.LiveByCountryAndStatus = liveByCountryAndStatusFilter;
+
+                var pageNumber = page ?? 1;
+                HttpContext.Session.SetString("LiveByCountryAndStatusListFilter", JsonConvert.SerializeObject(liveByCountryAndStatusFilter));
+
+                ViewBag.LiveByCountryAndStatusListFilter = liveByCountryAndStatusFilter.ToPagedList(pageNumber, 15);
             }
 
             liveByCountryAndStatusViewModel.Countries = await GetCountries();
