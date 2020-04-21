@@ -33,15 +33,15 @@
     var dayOneByCountryListFilter = ViewBag.DayOneByCountryListFilter;
 
     @Html.PagedListPager((IPagedList)dayOneByCountryListFilter, page => Url.Action("GetDayOneByCountry", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
+      new PagedListRenderOptions
+      {
+        LinkToFirstPageFormat = "<< Primera",
+        LinkToPreviousPageFormat = "< Anterior",
+        LinkToNextPageFormat = "Siguiente >",
+        LinkToLastPageFormat = "&Uacute;ltima >>",
+        LiElementClasses = new string[] { "page-item" },
+        PageClasses = new string[] { "page-link" }
+      }
     )
 
     <table class="table table-bordered">
@@ -71,15 +71,15 @@
     </table>
 
     @Html.PagedListPager((IPagedList)dayOneByCountryListFilter, page => Url.Action("GetDayOneByCountry", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
+      new PagedListRenderOptions
+      {
+        LinkToFirstPageFormat = "<< Primera",
+        LinkToPreviousPageFormat = "< Anterior",
+        LinkToNextPageFormat = "Siguiente >",
+        LinkToLastPageFormat = "&Uacute;ltima >>",
+        LiElementClasses = new string[] { "page-item" },
+        PageClasses = new string[] { "page-link" }
+      }
     )
   }
 }
