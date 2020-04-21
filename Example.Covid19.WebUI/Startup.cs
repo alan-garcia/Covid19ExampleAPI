@@ -30,6 +30,8 @@ namespace Example.Covid19.WebUI
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
+            services.AddSession();
+
             services.Configure<CovidApiAppSettingsModel>(Configuration.GetSection("Covid19Api"));
 
             services.AddSingleton<IApiService, ApiService>();
@@ -49,6 +51,8 @@ namespace Example.Covid19.WebUI
 
             app.UseStaticFiles();
             app.UseCookiePolicy();
+
+            app.UseSession();
 
             app.UseMvc(routes =>
             {

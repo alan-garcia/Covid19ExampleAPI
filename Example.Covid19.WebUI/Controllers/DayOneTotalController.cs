@@ -1,26 +1,27 @@
 ﻿using Example.Covid19.WebUI.Config;
 using Example.Covid19.WebUI.DTO.Cases.CountriesCases;
 using Example.Covid19.WebUI.DTO.Cases.DayOneCases;
+using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class DayOneTotalController : Controller
+    public class DayOneTotalController : BaseController
     {
-        private readonly IApiService _apiService;
-        private readonly IConfiguration _config;
-
         private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
         private const string STATUS_PLACEHOLDER = "{status}";
 
-        public DayOneTotalController(IApiService apiService, IConfiguration config)
+        public DayOneTotalController(IApiService apiService, IConfiguration config) : base(apiService, config)
         {
             _apiService = apiService;
             _config = config;
@@ -31,58 +32,78 @@ namespace Example.Covid19.WebUI.Controllers
             var dayOneTotalViewModel = new DayOneTotalViewModel
             {
                 Countries = await GetCountries(),
-                StatusTypeList = GetStatusTypeList()
+                StatusTypeList = StatusType.GetStatusTypeList()
             };
 
             return View(dayOneTotalViewModel);
         }
 
-        public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(DayOneTotalViewModel dayOneTotalLiveViewModel)
+        public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(int? page)
         {
-            if (!string.IsNullOrEmpty(dayOneTotalLiveViewModel.Country))
+            var dayOneTotalByCountryListFilter = HttpContext.Session.GetString("DayOneTotalByCountryListFilter");
+            var dayOneTotalByCountryListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<DayOneTotal>>(dayOneTotalByCountryListFilter);
+
+            var pageNumber = page ?? 1;
+            HttpContext.Session.SetString("DayOneTotalByCountryListFilter", JsonConvert.SerializeObject(dayOneTotalByCountryListFilterDeserialized));
+
+            ViewBag.DayOneTotalByCountryListFilter = dayOneTotalByCountryListFilterDeserialized.ToPagedList(pageNumber, 15);
+
+            DayOneTotalViewModel dayOneTotalViewModel = new DayOneTotalViewModel
             {
-                var dayOneTotalUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_TOTAL_KEY}")
-                                    .Replace(COUNTRYNAME_PLACEHOLDER, dayOneTotalLiveViewModel.Country)
-                                    .Replace(STATUS_PLACEHOLDER, dayOneTotalLiveViewModel.StatusType);
+                DayOneTotal = dayOneTotalByCountryListFilterDeserialized,
+                Countries = await GetCountries(),
+                StatusTypeList = StatusType.GetStatusTypeList()
+            };
+
+            return View("Index", dayOneTotalViewModel);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(DayOneTotalViewModel dayOneTotalLiveViewModel, int? page)
+        {
+            if (ModelState.IsValid)
+            {
+                var dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalLiveViewModel);
 
                 var dayOneTotalByCountryList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
-                var dayOneTotalByCountryListOrdered = dayOneTotalByCountryList.OrderByDescending(day => day.Date.Date);
 
-                dayOneTotalLiveViewModel.Countries = await GetCountries();
-                dayOneTotalLiveViewModel.StatusTypeList = GetStatusTypeList();
-                dayOneTotalLiveViewModel.DayOneTotal = dayOneTotalByCountryListOrdered;
+                var dayOneTotalByCountryListFilter = ApplySearchFilter(dayOneTotalByCountryList, dayOneTotalLiveViewModel);
+
+                dayOneTotalLiveViewModel.DayOneTotal = dayOneTotalByCountryListFilter;
+
+                var pageNumber = page ?? 1;
+                HttpContext.Session.SetString("DayOneTotalByCountryListFilter", JsonConvert.SerializeObject(dayOneTotalByCountryListFilter));
+
+                ViewBag.DayOneTotalByCountryListFilter = dayOneTotalByCountryListFilter.ToPagedList(pageNumber, 15);
             }
-            else
-            {
-                dayOneTotalLiveViewModel.Countries = await GetCountries();
-                dayOneTotalLiveViewModel.StatusTypeList = GetStatusTypeList();
-            }
+
+            dayOneTotalLiveViewModel.Countries = await GetCountries();
+            dayOneTotalLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", dayOneTotalLiveViewModel);
         }
 
         private async Task<IEnumerable<SelectListItem>> GetCountries()
         {
-            var countries = await _apiService.GetAsync<IEnumerable<Countries>>
-            (
-                _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.COUNTRIES_KEY}")
-            );
+            var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
-            var dayOneByCountryOrderedList = countries.OrderBy(c => c.Country).ToList();
-
-            return countries
-                .Select(c => new SelectListItem() { Text = c.Country, Value = c.Country })
-                .OrderBy(c => c.Text);
+            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
         }
 
-        private List<SelectListItem> GetStatusTypeList()
+        private string ExtractPlaceholderUrlApi(DayOneTotalViewModel dayOneTotalLiveViewModel)
         {
-            return new List<SelectListItem>
-            {
-                new SelectListItem() { Text = "Confirmados", Value = "confirmed" },
-                new SelectListItem() { Text = "Recuperados", Value = "recovered" },
-                new SelectListItem() { Text = "Muertos", Value = "deaths" }
-            };
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_TOTAL_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, dayOneTotalLiveViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, dayOneTotalLiveViewModel.StatusType);
         }
+
+        private IEnumerable<DayOneTotal> ApplySearchFilter
+            (IEnumerable<DayOneTotal> dayOneTotalByCountryList, DayOneTotalViewModel dayOneTotalLiveViewModel)
+        {
+            return dayOneTotalByCountryList
+                    .Where(day => day.Country.Equals(dayOneTotalLiveViewModel.Country) && day.Status.Equals(dayOneTotalLiveViewModel.StatusType))
+                    .OrderByDescending(day => day.Date.Date);
+        }
+
     }
 }

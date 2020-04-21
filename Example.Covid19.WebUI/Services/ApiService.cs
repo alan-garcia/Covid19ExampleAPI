@@ -13,7 +13,8 @@ namespace Example.Covid19.WebUI.Services
         private readonly string _urlApiBase;
         private readonly int _loginTimeOut;
 
-        public ApiService(IConfiguration config) {
+        public ApiService(IConfiguration config)
+        {
             _loginTimeOut = 20;
             _urlApiBase = config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.API_URLBASE_KEY}");
         }

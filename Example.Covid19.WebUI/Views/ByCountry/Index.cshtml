@@ -1,4 +1,8 @@
-﻿@model Example.Covid19.WebUI.ViewModels.ByCountryViewModel
+﻿@using X.PagedList;
+@using X.PagedList.Mvc.Core;
+@using X.PagedList.Mvc.Core.Common;
+
+@model Example.Covid19.WebUI.ViewModels.ByCountryViewModel
 @{
   ViewData["Title"] = "By Country";
 }
@@ -6,6 +10,7 @@
 <h1>By Country</h1>
 
 <div class="mb-3">
+  <div asp-validation-summary="All" class="text-danger"></div>
   <form class="form-inline my-2 my-lg-0" asp-controller="ByCountry" asp-action="GetByCountry" method="post">
     <select class="custom-select" asp-for="Country" asp-items="@Model.Countries">
       <option selected value="">-- Seleccione un país --</option>
@@ -21,29 +26,61 @@
 
 @if (Model.ByCountry != null)
 {
-  <table class="table table-bordered">
-    <thead>
-      <tr class="text-center">
-        <th scope="col">País</th>
-        <th scope="col">Código País</th>
-        <th scope="col">Latitud</th>
-        <th scope="col">Longitud</th>
-        <th scope="col">Casos</th>
-        <th scope="col">Fecha</th>
-      </tr>
-    </thead>
-    <tbody>
-      @foreach (var dayOneLive in Model.ByCountry)
-      {
+  if (Model.ByCountry.Count() == 0)
+  {
+    <div class="alert alert-info">No hay resultados para esta búsqueda. Inténtalo de nuevo con otro criterio.</div>
+  }
+  else
+  {
+    var byCountryFilterList = ViewBag.ByCountryFilterList;
+
+    @Html.PagedListPager((IPagedList)byCountryFilterList, page => Url.Action("GetByCountry", new { page = page }),
+        new PagedListRenderOptions
+        {
+          LinkToFirstPageFormat = "<< Primera",
+          LinkToPreviousPageFormat = "< Anterior",
+          LinkToNextPageFormat = "Siguiente >",
+          LinkToLastPageFormat = "&Uacute;ltima >>",
+          LiElementClasses = new string[] { "page-item" },
+          PageClasses = new string[] { "page-link" }
+        }
+    )
+    <table class="table table-bordered">
+      <thead>
         <tr class="text-center">
-          <td>@dayOneLive.Country</td>
-          <td>@dayOneLive.CountryCode</td>
-          <td>@dayOneLive.Lat</td>
-          <td>@dayOneLive.Lon</td>
-          <td>@dayOneLive.Cases</td>
-          <td>@dayOneLive.Date.ToString("dd/MM/yyyy")</td>
+          <th scope="col">País</th>
+          <th scope="col">Código País</th>
+          <th scope="col">Latitud</th>
+          <th scope="col">Longitud</th>
+          <th scope="col">Casos</th>
+          <th scope="col">Fecha</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @foreach (var byCountry in byCountryFilterList)
+        {
+          <tr class="text-center">
+            <td>@byCountry.Country</td>
+            <td>@byCountry.CountryCode</td>
+            <td>@byCountry.Lat</td>
+            <td>@byCountry.Lon</td>
+            <td>@byCountry.Cases</td>
+            <td>@byCountry.Date.ToString("dd/MM/yyyy")</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @Html.PagedListPager((IPagedList)byCountryFilterList, page => Url.Action("GetByCountry", new { page = page }),
+        new PagedListRenderOptions
+        {
+          LinkToFirstPageFormat = "<< Primera",
+          LinkToPreviousPageFormat = "< Anterior",
+          LinkToNextPageFormat = "Siguiente >",
+          LinkToLastPageFormat = "&Uacute;ltima >>",
+          LiElementClasses = new string[] { "page-item" },
+          PageClasses = new string[] { "page-link" }
+        }
+    )
+  }
 }

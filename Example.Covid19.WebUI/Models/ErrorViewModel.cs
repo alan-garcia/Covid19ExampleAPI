@@ -1,5 +1,3 @@
-using System;
-
 namespace Example.Covid19.WebUI.Models
 {
     public class ErrorViewModel

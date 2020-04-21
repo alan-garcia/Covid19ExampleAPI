@@ -1,27 +1,28 @@
 ﻿using Example.Covid19.WebUI.Config;
 using Example.Covid19.WebUI.DTO.Cases.CountriesCases;
+using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
-    public class ByCountryTotalController : Controller
+    public class ByCountryTotalController : BaseController
     {
-        private readonly IApiService _apiService;
-        private readonly IConfiguration _config;
-
         private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
         private const string STATUS_PLACEHOLDER = "{status}";
         private const string DATEFROM_PLACEHOLDER = "{dateFrom}";
         private const string DATETO_PLACEHOLDER = "{dateTo}";
 
-        public ByCountryTotalController(IApiService apiService, IConfiguration config)
+        public ByCountryTotalController(IApiService apiService, IConfiguration config) : base(apiService, config)
         {
             _apiService = apiService;
             _config = config;
@@ -32,65 +33,81 @@ namespace Example.Covid19.WebUI.Controllers
             var byCountryViewModel = new ByCountryTotalViewModel
             {
                 Countries = await GetCountries(),
-                StatusTypeList = GetStatusTypeList()
+                StatusTypeList = StatusType.GetStatusTypeList()
             };
 
             return View(byCountryViewModel);
         }
 
-        public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(ByCountryTotalViewModel byCountryTotalViewModel)
+        public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(int? page)
         {
-            if (!string.IsNullOrEmpty(byCountryTotalViewModel.Country) && !string.IsNullOrEmpty(byCountryTotalViewModel.StatusType) &&
-                !string.IsNullOrEmpty(byCountryTotalViewModel.DateFrom.ToString()) && !string.IsNullOrEmpty(byCountryTotalViewModel.DateTo.ToString()))
+            var byCountryTotalListFilter = HttpContext.Session.GetString("ByCountryTotalListFilter");
+            var byCountryTotalListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<ByCountryTotal>>(byCountryTotalListFilter);
+
+            var pageNumber = page ?? 1;
+            HttpContext.Session.SetString("ByCountryTotalListFilter", JsonConvert.SerializeObject(byCountryTotalListFilterDeserialized));
+
+            ViewBag.ByCountryTotalFilterList = byCountryTotalListFilterDeserialized.ToPagedList(pageNumber, 15);
+
+            ByCountryTotalViewModel byCountryTotalViewModel = new ByCountryTotalViewModel
             {
-                var byCountryTotalUrl = _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_TOTAL_KEY}")
-                                        .Replace(COUNTRYNAME_PLACEHOLDER, byCountryTotalViewModel.Country)
-                                        .Replace(STATUS_PLACEHOLDER, byCountryTotalViewModel.StatusType)
-                                        .Replace(DATEFROM_PLACEHOLDER, byCountryTotalViewModel.DateFrom.ToString("dd/MM/yyyy"))
-                                        .Replace(DATETO_PLACEHOLDER, byCountryTotalViewModel.DateTo.ToString("dd/MM/yyyy"));
+                ByCountryTotal = byCountryTotalListFilterDeserialized,
+                Countries = await GetCountries(),
+                StatusTypeList = StatusType.GetStatusTypeList()
+            };
+
+            return View("Index", byCountryTotalViewModel);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(ByCountryTotalViewModel byCountryTotalViewModel, int? page)
+        {
+            if (ModelState.IsValid)
+            {
+                var byCountryTotalUrl = ExtractPlaceholderUrlApi(byCountryTotalViewModel);
 
                 var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
 
-                var byCountryTotalListOrdered = byCountryTotalList.Where(day => day.Country.Equals(byCountryTotalViewModel.Country) &&
-                        day.Status.Equals(byCountryTotalViewModel.StatusType) &&
-                        day.Date >= byCountryTotalViewModel.DateFrom && day.Date <= byCountryTotalViewModel.DateTo)
-                    .OrderByDescending(day => day.Date.Date);
+                var byCountryTotalListFilter = ApplySearchFilter(byCountryTotalList, byCountryTotalViewModel);
 
-                byCountryTotalViewModel.Countries = await GetCountries();
-                byCountryTotalViewModel.StatusTypeList = GetStatusTypeList();
-                byCountryTotalViewModel.ByCountryTotal = byCountryTotalListOrdered;
+                byCountryTotalViewModel.ByCountryTotal = byCountryTotalListFilter;
+
+                var pageNumber = page ?? 1;
+                HttpContext.Session.SetString("ByCountryTotalListFilter", JsonConvert.SerializeObject(byCountryTotalListFilter));
+
+                ViewBag.byCountryTotalFilterList = byCountryTotalListFilter.ToPagedList(pageNumber, 15);
             }
-            else
-            {
-                byCountryTotalViewModel.Countries = await GetCountries();
-                byCountryTotalViewModel.StatusTypeList = GetStatusTypeList();
-            }
+
+            byCountryTotalViewModel.Countries = await GetCountries();
+            byCountryTotalViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", byCountryTotalViewModel);
         }
 
         private async Task<IEnumerable<SelectListItem>> GetCountries()
         {
-            var countries = await _apiService.GetAsync<IEnumerable<Countries>>
-            (
-                _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.COUNTRIES_KEY}")
-            );
+            var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
-            var byCountryOrderedList = countries.OrderBy(c => c.Country).ToList();
-
-            return byCountryOrderedList
-                .Select(c => new SelectListItem() { Text = c.Country, Value = c.Country })
-                .OrderBy(c => c.Text);
+            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
         }
 
-        private List<SelectListItem> GetStatusTypeList()
+        private string ExtractPlaceholderUrlApi(ByCountryTotalViewModel byCountryTotalViewModel)
         {
-            return new List<SelectListItem>
-            {
-                new SelectListItem() { Text = "Confirmados", Value = "confirmed" },
-                new SelectListItem() { Text = "Recuperados", Value = "recovered" },
-                new SelectListItem() { Text = "Muertos", Value = "deaths" }
-            };
+            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_TOTAL_KEY}")
+                            .Replace(COUNTRYNAME_PLACEHOLDER, byCountryTotalViewModel.Country)
+                            .Replace(STATUS_PLACEHOLDER, byCountryTotalViewModel.StatusType)
+                            .Replace(DATEFROM_PLACEHOLDER, byCountryTotalViewModel.DateFrom.ToString("dd/MM/yyyy"))
+                            .Replace(DATETO_PLACEHOLDER, byCountryTotalViewModel.DateTo.ToString("dd/MM/yyyy"));
         }
+
+        private IEnumerable<ByCountryTotal> ApplySearchFilter
+            (IEnumerable<ByCountryTotal> byCountryTotalList, ByCountryTotalViewModel byCountryTotalViewModel)
+        {
+            return byCountryTotalList
+                    .Where(bc => bc.Country.Equals(byCountryTotalViewModel.Country) && bc.Status.Equals(byCountryTotalViewModel.StatusType))
+                    .Where(bc => bc.Date >= byCountryTotalViewModel.DateFrom && bc.Date <= byCountryTotalViewModel.DateTo)
+                    .OrderByDescending(bc => bc.Date.Date);
+        }
+
     }
 }
