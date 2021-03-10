@@ -4,6 +4,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Example.Covid19.WebUI.ViewModels
 {
+    /// <summary>
+    ///     Representan los campos comunes a mostrar en las vistas
+    /// </summary>
     public class CovidBaseViewModel
     {
         [Required(ErrorMessage = "El pais es obligatorio")]

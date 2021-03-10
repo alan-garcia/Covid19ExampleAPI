@@ -11,22 +11,35 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using X.PagedList;
 
 namespace Example.Covid19.WebUI.Controllers
 {
+    /// <summary>
+    ///     Controlador que contienen las acciones sobre todos los casos por tipo para un país desde el primer caso de COVID conocido
+    /// </summary>
     public class DayOneTotalController : BaseController
     {
         private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
         private const string STATUS_PLACEHOLDER = "{status}";
 
+        /// <summary>
+        ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
+        /// </summary>
+        /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
+        /// <param name="config">El fichero de configuración "appsettings.json"</param>
         public DayOneTotalController(IApiService apiService, IConfiguration config) : base(apiService, config)
         {
             _apiService = apiService;
             _config = config;
         }
 
+        /// <summary>
+        ///     Obtiene la lista de todos los países
+        /// </summary>
+        /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
             var dayOneTotalViewModel = new DayOneTotalViewModel
@@ -38,12 +51,18 @@ namespace Example.Covid19.WebUI.Controllers
             return View(dayOneTotalViewModel);
         }
 
+        /// <summary>
+        ///     Obtiene la lista de todos los casos por tipo para un país desde el primer caso de COVID conocido
+        /// </summary>
+        /// <param name="page">Número de página actual de la paginación</param>
+        /// <returns>La vista con la lista de todos los casos desde el primer caso de COVID, filtrado por países</returns>
         public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(int? page)
         {
-            var dayOneTotalByCountryListFilter = HttpContext.Session.GetString("DayOneTotalByCountryListFilter");
-            var dayOneTotalByCountryListFilterDeserialized = JsonConvert.DeserializeObject<IEnumerable<DayOneTotal>>(dayOneTotalByCountryListFilter);
+            string dayOneTotalByCountryListFilter = HttpContext.Session.GetString("DayOneTotalByCountryListFilter");
+            IEnumerable<DayOneTotal> dayOneTotalByCountryListFilterDeserialized = 
+                JsonConvert.DeserializeObject<IEnumerable<DayOneTotal>>(dayOneTotalByCountryListFilter);
 
-            var pageNumber = page ?? 1;
+            int pageNumber = page ?? 1;
             HttpContext.Session.SetString("DayOneTotalByCountryListFilter", JsonConvert.SerializeObject(dayOneTotalByCountryListFilterDeserialized));
 
             ViewBag.DayOneTotalByCountryListFilter = dayOneTotalByCountryListFilterDeserialized.ToPagedList(pageNumber, 15);
@@ -58,20 +77,26 @@ namespace Example.Covid19.WebUI.Controllers
             return View("Index", dayOneTotalViewModel);
         }
 
+        /// <summary>
+        ///     Aplica en el formulario los filtros de búsqueda de todos los casos por tipo para un país desde el 
+        ///     primer caso de COVID conocido
+        /// </summary>
+        /// <param name="dayOneTotalLiveViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
+        /// formulario de búsqueda</param>
+        /// <param name="page">Número de página actual de la paginación</param>
+        /// <returns>La vista con la lista de todos los casos del país indicado que cumpla el criterio del estado</returns>
         [HttpPost]
         public async Task<ActionResult<IEnumerable<DayOneTotal>>> GetDayOneTotalByCountry(DayOneTotalViewModel dayOneTotalLiveViewModel, int? page)
         {
             if (ModelState.IsValid)
             {
-                var dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalLiveViewModel);
-
-                var dayOneTotalByCountryList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
-
-                var dayOneTotalByCountryListFilter = ApplySearchFilter(dayOneTotalByCountryList, dayOneTotalLiveViewModel);
+                string dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalLiveViewModel);
+                IEnumerable<DayOneTotal> dayOneTotalByCountryList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
+                IEnumerable<DayOneTotal> dayOneTotalByCountryListFilter = ApplySearchFilter(dayOneTotalByCountryList, dayOneTotalLiveViewModel);
 
                 dayOneTotalLiveViewModel.DayOneTotal = dayOneTotalByCountryListFilter;
 
-                var pageNumber = page ?? 1;
+                int pageNumber = page ?? 1;
                 HttpContext.Session.SetString("DayOneTotalByCountryListFilter", JsonConvert.SerializeObject(dayOneTotalByCountryListFilter));
 
                 ViewBag.DayOneTotalByCountryListFilter = dayOneTotalByCountryListFilter.ToPagedList(pageNumber, 15);
@@ -83,25 +108,48 @@ namespace Example.Covid19.WebUI.Controllers
             return View("Index", dayOneTotalLiveViewModel);
         }
 
+        /// <summary>
+        ///     Obtiene todos los datos relacionados con el país
+        /// </summary>
+        /// <returns>La lista de países en un elemento HTML de tipo "desplegable" para ser mostrado en la vista</returns>
         private async Task<IEnumerable<SelectListItem>> GetCountries()
         {
-            var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
+            IEnumerable<Countries> countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
 
             return CountriesList.BuildAndGetCountriesSelectListItem(countries);
         }
 
-        private string ExtractPlaceholderUrlApi(DayOneTotalViewModel dayOneTotalLiveViewModel)
+        /// <summary>
+        ///     Sustituye los placeholders marcados entre corchetes "{" "}" especificados en el fichero "appsettings.json" 
+        ///     en el apartado "Covid19Api" por los datos filtrados en la vista-modelo recogidas en el formulario de búsqueda
+        /// </summary>
+        /// <param name="dayOneTotalViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
+        /// formulario de búsqueda</param>
+        /// <returns>La URL de la API "total/dayone/country/status" con los parámetros de búsqueda sustituídos</returns>
+        private string ExtractPlaceholderUrlApi(DayOneTotalViewModel dayOneTotalViewModel)
         {
-            return _config.GetValue<string>($"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_TOTAL_KEY}")
-                            .Replace(COUNTRYNAME_PLACEHOLDER, dayOneTotalLiveViewModel.Country)
-                            .Replace(STATUS_PLACEHOLDER, dayOneTotalLiveViewModel.StatusType);
+            string dayOneTotalApiUrlPlaceHolder = _config.GetValue<string>(
+                $"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_TOTAL_KEY}"
+            );
+
+            return new StringBuilder(dayOneTotalApiUrlPlaceHolder)
+                    .Replace(COUNTRYNAME_PLACEHOLDER, dayOneTotalViewModel.Country)
+                    .Replace(STATUS_PLACEHOLDER, dayOneTotalViewModel.StatusType)
+                    .ToString();
         }
 
-        private IEnumerable<DayOneTotal> ApplySearchFilter
-            (IEnumerable<DayOneTotal> dayOneTotalByCountryList, DayOneTotalViewModel dayOneTotalLiveViewModel)
+        /// <summary>
+        ///     Aplica el filtro de búsqueda para los casos de un país desde el 
+        ///     primer caso de COVID conocido (en directo)
+        /// </summary>
+        /// <param name="dayOneTotalByCountryList">La lista de países</param>
+        /// <param name="dayOneTotalViewModel">La vista-modelo que contienen las opciones seleccionadas en el formulario de búsqueda</param>
+        /// <returns>Lista con el país desde el primer caso de COVID, ordenadas de fechas más recientes a más antiguas</returns>
+        private IEnumerable<DayOneTotal> ApplySearchFilter(IEnumerable<DayOneTotal> dayOneTotalByCountryList,
+                                                           DayOneTotalViewModel dayOneTotalViewModel)
         {
             return dayOneTotalByCountryList
-                    .Where(day => day.Country.Equals(dayOneTotalLiveViewModel.Country) && day.Status.Equals(dayOneTotalLiveViewModel.StatusType))
+                    .Where(day => day.Country.Equals(dayOneTotalViewModel.Country) && day.Status.Equals(dayOneTotalViewModel.StatusType))
                     .OrderByDescending(day => day.Date.Date);
         }
 
