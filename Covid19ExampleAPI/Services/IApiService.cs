@@ -2,8 +2,17 @@
 
 namespace Covid19ExampleAPI.Services
 {
+    /// <summary>
+    ///     Contracto para describir los servicios de la API a consumir
+    /// </summary>
     public interface IApiService
     {
-        Task<T> GetAsync<T>(string urlApi) where T: class;
+        /// <summary>
+        ///     Obtiene los datos de la API con base en una URL concreta
+        /// </summary>
+        /// <typeparam name="T">API concreta a consumir</typeparam>
+        /// <param name="apiUrl">URL concreta de la API</param>
+        /// <returns>Toda la información relacionada con la API especificada en la URL</returns>
+        Task<T> GetAsync<T>(string apiUrl) where T: class;
     }
 }
