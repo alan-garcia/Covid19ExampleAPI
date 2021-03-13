@@ -15,5 +15,11 @@
         public const string LIVE_BY_CONTRY_AND_STATUS_KEY = "LiveByCountryAndStatus";
         public const string LIVE_BY_CONTRY_AND_STATUS_AFTERDATE_KEY = "LiveByCountryAndStatusAfterDate";
         public const string STATS_KEY = "Stats";
+
+        public const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
+        public const string STATUS_PLACEHOLDER = "{status}";
+        public const string DATE_PLACEHOLDER = "{date}";
+        public const string DATEFROM_PLACEHOLDER = "{dateFrom}";
+        public const string DATETO_PLACEHOLDER = "{dateTo}";
     }
 }

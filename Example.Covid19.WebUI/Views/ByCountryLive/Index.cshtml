@@ -1,8 +1,4 @@
-﻿@using X.PagedList;
-@using X.PagedList.Mvc.Core;
-@using X.PagedList.Mvc.Core.Common;
-
-@model Example.Covid19.WebUI.ViewModels.ByCountryLiveViewModel
+﻿@model Example.Covid19.WebUI.ViewModels.ByCountryLiveViewModel
 @{
   ViewData["Title"] = "By Country Live";
 }
@@ -32,19 +28,8 @@
   }
   else
   {
-    var byCountryLiveFilterList = ViewBag.byCountryLiveFilterList;
+    <partial name="_Pagination" model="Model.ByCountryLive" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetByCountryLive" } }'/>
 
-    @Html.PagedListPager((IPagedList)byCountryLiveFilterList, page => Url.Action("GetByCountryLive", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
     <table class="table table-bordered">
       <thead>
         <tr class="text-center">
@@ -57,7 +42,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach (var byCountryLive in byCountryLiveFilterList)
+        @foreach (var byCountryLive in Model.ByCountryLive)
         {
           <tr class="text-center">
             <td>@byCountryLive.Country</td>
@@ -71,16 +56,6 @@
       </tbody>
     </table>
 
-    @Html.PagedListPager((IPagedList)byCountryLiveFilterList, page => Url.Action("GetByCountryLive", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
+    <partial name="_Pagination" model="Model.ByCountryLive" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetByCountryLive" } }' />
   }
 }

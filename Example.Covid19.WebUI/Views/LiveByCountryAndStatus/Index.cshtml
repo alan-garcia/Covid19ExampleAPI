@@ -1,8 +1,4 @@
-﻿@using X.PagedList;
-@using X.PagedList.Mvc.Core;
-@using X.PagedList.Mvc.Core.Common;
-
-@model Example.Covid19.WebUI.ViewModels.LiveByCountryAndStatusViewModel
+﻿@model Example.Covid19.WebUI.ViewModels.LiveByCountryAndStatusViewModel
 @{
   ViewData["Title"] = "Live By Country and Status";
 }
@@ -30,19 +26,8 @@
   }
   else
   {
-    var liveByCountryAndStatusListFilter = ViewBag.LiveByCountryAndStatusListFilter;
-
-    @Html.PagedListPager((IPagedList)liveByCountryAndStatusListFilter, page => Url.Action("GetLiveByCountryAndStatus", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
+    <partial name="_Pagination" model="Model.LiveByCountryAndStatus" 
+             view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetLiveByCountryAndStatus" } }'/>
 
     <table class="table table-bordered">
       <thead>
@@ -62,7 +47,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach (var liveByCountryAndStatus in liveByCountryAndStatusListFilter)
+        @foreach (var liveByCountryAndStatus in Model.LiveByCountryAndStatus)
         {
           <tr class="text-center">
             <td>@liveByCountryAndStatus.Country</td>
@@ -82,16 +67,7 @@
       </tbody>
     </table>
 
-    @Html.PagedListPager((IPagedList)liveByCountryAndStatusListFilter, page => Url.Action("GetLiveByCountryAndStatus", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
+    <partial name="_Pagination" model="Model.LiveByCountryAndStatus"
+             view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetLiveByCountryAndStatus" } }' />
   }
 }

@@ -5,7 +5,6 @@ using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -21,10 +20,7 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class ByCountryController : BaseController
     {
-        private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
-        private const string STATUS_PLACEHOLDER = "{status}";
-        private const string DATEFROM_PLACEHOLDER = "{dateFrom}";
-        private const string DATETO_PLACEHOLDER = "{dateTo}";
+        private const int PAGE_SIZE = 15;
 
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
@@ -43,13 +39,7 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var byCountryViewModel = new ByCountryViewModel
-            {
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
-
-            return View(byCountryViewModel);
+            return View(await GetCountriesViewModel<ByCountryViewModel>());
         }
 
         /// <summary>
@@ -59,21 +49,13 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los casos filtrado por países</returns>
         public async Task<ActionResult<IEnumerable<ByCountry>>> GetByCountry(int? page)
         {
-            string byCountryListFilter = HttpContext.Session.GetString("ByCountryListFilter");
-            IEnumerable<ByCountry> byCountryListFilterDeserialized = 
-                JsonConvert.DeserializeObject<IEnumerable<ByCountry>>(byCountryListFilter);
+            string byCountrySearchFilter = HttpContext.Session.GetString("byCountrySearchFilter");
+            IEnumerable<ByCountry> byCountrySearchFilterDeserialized = 
+                JsonConvert.DeserializeObject<IEnumerable<ByCountry>>(byCountrySearchFilter);
 
             int pageNumber = page ?? 1;
-            HttpContext.Session.SetString("ByCountryListFilter", JsonConvert.SerializeObject(byCountryListFilterDeserialized));
-
-            ViewBag.ByCountryFilterList = byCountryListFilterDeserialized.ToPagedList(pageNumber, 15);
-
-            ByCountryViewModel byCountryViewModel = new ByCountryViewModel
-            {
-                ByCountry = byCountryListFilterDeserialized,
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
+            var byCountryViewModel = await GetCountriesViewModel<ByCountryViewModel>();
+            byCountryViewModel.ByCountry = byCountrySearchFilterDeserialized.ToPagedList(pageNumber, PAGE_SIZE);
 
             return View("Index", byCountryViewModel);
         }
@@ -93,14 +75,11 @@ namespace Example.Covid19.WebUI.Controllers
             {
                 string byCountryUrl = ExtractPlaceholderUrlApi(byCountryViewModel);
                 IEnumerable<ByCountry> byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
-                IEnumerable<ByCountry> byCountryListFilter = ApplySearchFilter(byCountryList, byCountryViewModel);
-                
-                byCountryViewModel.ByCountry = byCountryListFilter;
+                IEnumerable<ByCountry> byCountrySearchFilter = ApplySearchFilter(byCountryList, byCountryViewModel);
 
                 int pageNumber = page ?? 1;
-                HttpContext.Session.SetString("ByCountryListFilter", JsonConvert.SerializeObject(byCountryListFilter));
-
-                ViewBag.ByCountryFilterList = byCountryListFilter.ToPagedList(pageNumber, 15);
+                byCountryViewModel.ByCountry = byCountrySearchFilter.ToPagedList(pageNumber, PAGE_SIZE);
+                HttpContext.Session.SetString("byCountrySearchFilter", JsonConvert.SerializeObject(byCountrySearchFilter));
             }
 
             byCountryViewModel.Countries = await GetCountries();
@@ -110,34 +89,21 @@ namespace Example.Covid19.WebUI.Controllers
         }
 
         /// <summary>
-        ///     Obtiene todos los datos relacionados con el país
-        /// </summary>
-        /// <returns>La lista de países en un elemento HTML de tipo "desplegable" para ser mostrado en la vista</returns>
-        private async Task<IEnumerable<SelectListItem>> GetCountries()
-        {
-            IEnumerable<Countries> countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
-
-            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
-        }
-
-        /// <summary>
         ///     Sustituye los placeholders marcados entre corchetes "{" "}" especificados en el fichero "appsettings.json" 
         ///     en el apartado "Covid19Api" por los datos filtrados en la vista-modelo recogidas en el formulario de búsqueda
         /// </summary>
         /// <param name="byCountryViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
         /// formulario de búsqueda</param>
         /// <returns>La URL de la API "country/status" con los parámetros de búsqueda sustituídos</returns>
-        private string ExtractPlaceholderUrlApi(ByCountryViewModel byCountryViewModel)
+        public string ExtractPlaceholderUrlApi(ByCountryViewModel byCountryViewModel)
         {
-            string byCountryApiUrlPlaceHolder = _config.GetValue<string>(
-                $"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_KEY}"
-            );
+            string byCountryApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.BY_COUNTRY_KEY);
 
-            return new StringBuilder(byCountryApiUrlPlaceHolder)
-                    .Replace(COUNTRYNAME_PLACEHOLDER, byCountryViewModel.Country)
-                    .Replace(STATUS_PLACEHOLDER, byCountryViewModel.StatusType)
-                    .Replace(DATEFROM_PLACEHOLDER, byCountryViewModel.DateFrom.ToString("yyyy-MM-dd"))
-                    .Replace(DATETO_PLACEHOLDER, byCountryViewModel.DateTo.ToString("yyyy-MM-dd"))
+            return new StringBuilder(byCountryApiUrl)
+                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, byCountryViewModel.Country)
+                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, byCountryViewModel.StatusType)
+                    .Replace(AppSettingsConfig.DATEFROM_PLACEHOLDER, byCountryViewModel.DateFrom.ToString("yyyy-MM-dd"))
+                    .Replace(AppSettingsConfig.DATETO_PLACEHOLDER, byCountryViewModel.DateTo.ToString("yyyy-MM-dd"))
                     .ToString();
         }
 
@@ -147,7 +113,7 @@ namespace Example.Covid19.WebUI.Controllers
         /// <param name="byCountryList">La lista de países</param>
         /// <param name="byCountryViewModel">La vista-modelo que contienen las opciones seleccionadas en el formulario de búsqueda</param>
         /// <returns>Lista con el país y el rango de fechas seleccionadas en la búsqueda, ordenadas de fechas más recientes a más antiguas</returns>
-        private IEnumerable<ByCountry> ApplySearchFilter(IEnumerable<ByCountry> byCountryList,
+        public IEnumerable<ByCountry> ApplySearchFilter(IEnumerable<ByCountry> byCountryList,
                                                          ByCountryViewModel byCountryViewModel)
         {
             return byCountryList
@@ -155,6 +121,5 @@ namespace Example.Covid19.WebUI.Controllers
                     .Where(bc => bc.Date >= byCountryViewModel.DateFrom && bc.Date <= byCountryViewModel.DateTo)
                     .OrderByDescending(bc => bc.Date.Date);
         }
-
     }
 }

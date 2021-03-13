@@ -1,0 +1,30 @@
+﻿@model Example.Covid19.WebUI.ViewModels.CountriesViewModel
+@{
+  ViewData["Title"] = "Países";
+}
+
+<h1>Países</h1>
+
+<partial name="_Pagination" model="Model.Countries" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetCountries" } }' />
+
+<table class="table table-bordered">
+  <thead>
+    <tr class="text-center">
+      <th scope="col">País</th>
+      <th scope="col">Slug</th>
+      <th scope="col">ISO2</th>
+    </tr>
+  </thead>
+  <tbody>
+    @foreach (var country in Model.Countries)
+    {
+      <tr class="text-center">
+        <td>@country.Country</td>
+        <td>@country.Slug</td>
+        <td>@country.ISO2</td>
+      </tr>
+    }
+  </tbody>
+</table>
+
+<partial name="_Pagination" model="Model.Countries" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetCountries" } }' />

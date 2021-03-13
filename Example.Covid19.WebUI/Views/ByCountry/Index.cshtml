@@ -1,8 +1,4 @@
-﻿@using X.PagedList;
-@using X.PagedList.Mvc.Core;
-@using X.PagedList.Mvc.Core.Common;
-
-@model Example.Covid19.WebUI.ViewModels.ByCountryViewModel
+﻿@model Example.Covid19.WebUI.ViewModels.ByCountryViewModel
 @{
   ViewData["Title"] = "By Country";
 }
@@ -32,19 +28,8 @@
   }
   else
   {
-    var byCountryFilterList = ViewBag.ByCountryFilterList;
+    <partial name="_Pagination" model="Model.ByCountry" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetByCountry" } }'/>
 
-    @Html.PagedListPager((IPagedList)byCountryFilterList, page => Url.Action("GetByCountry", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
     <table class="table table-bordered">
       <thead>
         <tr class="text-center">
@@ -57,7 +42,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach (var byCountry in byCountryFilterList)
+        @foreach (var byCountry in Model.ByCountry)
         {
           <tr class="text-center">
             <td>@byCountry.Country</td>
@@ -71,16 +56,6 @@
       </tbody>
     </table>
 
-    @Html.PagedListPager((IPagedList)byCountryFilterList, page => Url.Action("GetByCountry", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
+    <partial name="_Pagination" model="Model.ByCountry" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetByCountry" } }' />
   }
 }

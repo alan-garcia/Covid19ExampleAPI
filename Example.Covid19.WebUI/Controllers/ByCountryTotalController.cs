@@ -5,7 +5,6 @@ using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -21,10 +20,7 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class ByCountryTotalController : BaseController
     {
-        private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
-        private const string STATUS_PLACEHOLDER = "{status}";
-        private const string DATEFROM_PLACEHOLDER = "{dateFrom}";
-        private const string DATETO_PLACEHOLDER = "{dateTo}";
+        private const int PAGE_SIZE = 15;
 
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
@@ -43,13 +39,7 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var byCountryViewModel = new ByCountryTotalViewModel
-            {
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
-
-            return View(byCountryViewModel);
+            return View(await GetCountriesViewModel<ByCountryTotalViewModel>());
         }
 
         /// <summary>
@@ -59,21 +49,13 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de todos los casos filtrado por países</returns>
         public async Task<ActionResult<IEnumerable<ByCountryTotal>>> GetByCountryTotal(int? page)
         {
-            string byCountryTotalListFilter = HttpContext.Session.GetString("ByCountryTotalListFilter");
-            IEnumerable<ByCountryTotal> byCountryTotalListFilterDeserialized = 
-                JsonConvert.DeserializeObject<IEnumerable<ByCountryTotal>>(byCountryTotalListFilter);
+            string byCountryTotalSearchFilter = HttpContext.Session.GetString("ByCountryTotalSearchFilter");
+            IEnumerable<ByCountryTotal> byCountryTotalSearchFilterDeserialized = 
+                JsonConvert.DeserializeObject<IEnumerable<ByCountryTotal>>(byCountryTotalSearchFilter);
 
             int pageNumber = page ?? 1;
-            HttpContext.Session.SetString("ByCountryTotalListFilter", JsonConvert.SerializeObject(byCountryTotalListFilterDeserialized));
-
-            ViewBag.ByCountryTotalFilterList = byCountryTotalListFilterDeserialized.ToPagedList(pageNumber, 15);
-
-            ByCountryTotalViewModel byCountryTotalViewModel = new ByCountryTotalViewModel
-            {
-                ByCountryTotal = byCountryTotalListFilterDeserialized,
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
+            var byCountryTotalViewModel = await GetCountriesViewModel<ByCountryTotalViewModel>();
+            byCountryTotalViewModel.ByCountryTotal = byCountryTotalSearchFilterDeserialized.ToPagedList(pageNumber, PAGE_SIZE);
 
             return View("Index", byCountryTotalViewModel);
         }
@@ -93,14 +75,11 @@ namespace Example.Covid19.WebUI.Controllers
             {
                 string byCountryTotalUrl = ExtractPlaceholderUrlApi(byCountryTotalViewModel);
                 IEnumerable<ByCountryTotal> byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
-                IEnumerable<ByCountryTotal> byCountryTotalListFilter = ApplySearchFilter(byCountryTotalList, byCountryTotalViewModel);
-
-                byCountryTotalViewModel.ByCountryTotal = byCountryTotalListFilter;
+                IEnumerable<ByCountryTotal> byCountryTotalSearchFilter = ApplySearchFilter(byCountryTotalList, byCountryTotalViewModel);
 
                 int pageNumber = page ?? 1;
-                HttpContext.Session.SetString("ByCountryTotalListFilter", JsonConvert.SerializeObject(byCountryTotalListFilter));
-
-                ViewBag.byCountryTotalFilterList = byCountryTotalListFilter.ToPagedList(pageNumber, 15);
+                byCountryTotalViewModel.ByCountryTotal = byCountryTotalSearchFilter.ToPagedList(pageNumber, PAGE_SIZE);
+                HttpContext.Session.SetString("ByCountryTotalSearchFilter", JsonConvert.SerializeObject(byCountryTotalSearchFilter));
             }
 
             byCountryTotalViewModel.Countries = await GetCountries();
@@ -110,34 +89,21 @@ namespace Example.Covid19.WebUI.Controllers
         }
 
         /// <summary>
-        ///     Obtiene todos los datos relacionados con el país
-        /// </summary>
-        /// <returns>La lista de países en un elemento HTML de tipo "desplegable" para ser mostrado en la vista</returns>
-        private async Task<IEnumerable<SelectListItem>> GetCountries()
-        {
-            IEnumerable<Countries> countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
-
-            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
-        }
-
-        /// <summary>
         ///     Sustituye los placeholders marcados entre corchetes "{" "}" especificados en el fichero "appsettings.json" 
         ///     en el apartado "Covid19Api" por los datos filtrados en la vista-modelo recogidas en el formulario de búsqueda
         /// </summary>
         /// <param name="byCountryTotalViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
         /// formulario de búsqueda</param>
         /// <returns>La URL de la API "total/country/status" con los parámetros de búsqueda sustituídos</returns>
-        private string ExtractPlaceholderUrlApi(ByCountryTotalViewModel byCountryTotalViewModel)
+        public string ExtractPlaceholderUrlApi(ByCountryTotalViewModel byCountryTotalViewModel)
         {
-            string byCountryTotalApiUrlPlaceHolder = _config.GetValue<string>(
-                $"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.BY_COUNTRY_TOTAL_KEY}"
-            );
+            string byCountryTotalApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.BY_COUNTRY_TOTAL_KEY);
 
-            return new StringBuilder(byCountryTotalApiUrlPlaceHolder)
-                    .Replace(COUNTRYNAME_PLACEHOLDER, byCountryTotalViewModel.Country)
-                    .Replace(STATUS_PLACEHOLDER, byCountryTotalViewModel.StatusType)
-                    .Replace(DATEFROM_PLACEHOLDER, byCountryTotalViewModel.DateFrom.ToString("dd/MM/yyyy"))
-                    .Replace(DATETO_PLACEHOLDER, byCountryTotalViewModel.DateTo.ToString("dd/MM/yyyy"))
+            return new StringBuilder(byCountryTotalApiUrl)
+                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, byCountryTotalViewModel.Country)
+                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, byCountryTotalViewModel.StatusType)
+                    .Replace(AppSettingsConfig.DATEFROM_PLACEHOLDER, byCountryTotalViewModel.DateFrom.ToString("dd/MM/yyyy"))
+                    .Replace(AppSettingsConfig.DATETO_PLACEHOLDER, byCountryTotalViewModel.DateTo.ToString("dd/MM/yyyy"))
                     .ToString();
         }
 
@@ -155,6 +121,5 @@ namespace Example.Covid19.WebUI.Controllers
                     .Where(bc => bc.Date >= byCountryTotalViewModel.DateFrom && bc.Date <= byCountryTotalViewModel.DateTo)
                     .OrderByDescending(bc => bc.Date.Date);
         }
-
     }
 }

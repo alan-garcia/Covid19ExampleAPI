@@ -6,7 +6,6 @@ using Example.Covid19.WebUI.Services;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -22,8 +21,7 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class DayOneController : BaseController
     {
-        private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
-        private const string STATUS_PLACEHOLDER = "{status}";
+        private const int PAGE_SIZE = 15;
 
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
@@ -42,13 +40,7 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var dayOneViewModel = new DayOneViewModel
-            {
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
-
-            return View(dayOneViewModel);
+            return View(await GetCountriesViewModel<DayOneViewModel>());
         }
 
         /// <summary>
@@ -58,21 +50,13 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los casos desde el primer caso de COVID, filtrado por países</returns>
         public async Task<ActionResult<IEnumerable<DayOne>>> GetDayOneByCountry(int? page)
         {
-            string dayOneByCountryListFilter = HttpContext.Session.GetString("DayOneByCountryListFilter");
-            IEnumerable<DayOne> dayOneByCountryListFilterDeserialized = 
-                JsonConvert.DeserializeObject<IEnumerable<DayOne>>(dayOneByCountryListFilter);
+            string dayOneSearchFilter = HttpContext.Session.GetString("DayOneSearchFilter");
+            IEnumerable<DayOne> dayOneSearchFilterDeserialized = 
+                JsonConvert.DeserializeObject<IEnumerable<DayOne>>(dayOneSearchFilter);
 
             int pageNumber = page ?? 1;
-            HttpContext.Session.SetString("DayOneByCountryListFilter", JsonConvert.SerializeObject(dayOneByCountryListFilterDeserialized));
-
-            ViewBag.DayOneByCountryListFilter = dayOneByCountryListFilterDeserialized.ToPagedList(pageNumber, 15);
-
-            DayOneViewModel dayOneViewModel = new DayOneViewModel
-            {
-                DayOne = dayOneByCountryListFilterDeserialized,
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
+            var dayOneViewModel = await GetCountriesViewModel<DayOneViewModel>();
+            dayOneViewModel.DayOne = dayOneSearchFilterDeserialized.ToPagedList(pageNumber, PAGE_SIZE);
 
             return View("Index", dayOneViewModel);
         }
@@ -91,15 +75,12 @@ namespace Example.Covid19.WebUI.Controllers
             if (ModelState.IsValid)
             {
                 string dayOneUrl = ExtractPlaceholderUrlApi(dayOneViewModel);
-                IEnumerable<DayOne> dayOneByCountryList = await _apiService.GetAsync<IEnumerable<DayOne>>(dayOneUrl);
-                IEnumerable<DayOne> dayOneByCountryListFilter = ApplySearchFilter(dayOneByCountryList, dayOneViewModel);
-
-                dayOneViewModel.DayOne = dayOneByCountryListFilter;
+                IEnumerable<DayOne> dayOneList = await _apiService.GetAsync<IEnumerable<DayOne>>(dayOneUrl);
+                IEnumerable<DayOne> dayOneSearchFilter = ApplySearchFilter(dayOneList, dayOneViewModel);
 
                 int pageNumber = page ?? 1;
-                HttpContext.Session.SetString("DayOneByCountryListFilter", JsonConvert.SerializeObject(dayOneByCountryListFilter));
-
-                ViewBag.DayOneByCountryListFilter = dayOneByCountryListFilter.ToPagedList(pageNumber, 15);
+                dayOneViewModel.DayOne = dayOneSearchFilter.ToPagedList(pageNumber, PAGE_SIZE);
+                HttpContext.Session.SetString("DayOneSearchFilter", JsonConvert.SerializeObject(dayOneSearchFilter));
             }
 
             dayOneViewModel.Countries = await GetCountries();
@@ -109,32 +90,19 @@ namespace Example.Covid19.WebUI.Controllers
         }
 
         /// <summary>
-        ///     Obtiene todos los datos relacionados con el país
-        /// </summary>
-        /// <returns>La lista de países en un elemento HTML de tipo "desplegable" para ser mostrado en la vista</returns>
-        private async Task<IEnumerable<SelectListItem>> GetCountries()
-        {
-            IEnumerable<Countries> countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
-
-            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
-        }
-
-        /// <summary>
         ///     Sustituye los placeholders marcados entre corchetes "{" "}" especificados en el fichero "appsettings.json" 
         ///     en el apartado "Covid19Api" por los datos filtrados en la vista-modelo recogidas en el formulario de búsqueda
         /// </summary>
         /// <param name="dayOneViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
         /// formulario de búsqueda</param>
         /// <returns>La URL de la API "dayone/country/status" con los parámetros de búsqueda sustituídos</returns>
-        private string ExtractPlaceholderUrlApi(DayOneViewModel dayOneViewModel)
+        public string ExtractPlaceholderUrlApi(DayOneViewModel dayOneViewModel)
         {
-            string dayOneApiUrlPlaceHolder = _config.GetValue<string>(
-                $"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.DAYONE_KEY}"
-            );
+            string dayOneApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.DAYONE_KEY);
 
-            return new StringBuilder(dayOneApiUrlPlaceHolder)
-                    .Replace(COUNTRYNAME_PLACEHOLDER, dayOneViewModel.Country)
-                    .Replace(STATUS_PLACEHOLDER, dayOneViewModel.StatusType)
+            return new StringBuilder(dayOneApiUrl)
+                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, dayOneViewModel.Country)
+                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, dayOneViewModel.StatusType)
                     .ToString();
         }
 
@@ -145,13 +113,12 @@ namespace Example.Covid19.WebUI.Controllers
         /// <param name="dayOneByCountryList">La lista de países</param>
         /// <param name="dayOneViewModel">La vista-modelo que contienen las opciones seleccionadas en el formulario de búsqueda</param>
         /// <returns>Lista con el país desde el primer caso de COVID, ordenadas de fechas más recientes a más antiguas</returns>
-        private IEnumerable<DayOne> ApplySearchFilter(IEnumerable<DayOne> dayOneByCountryList,
+        public IEnumerable<DayOne> ApplySearchFilter(IEnumerable<DayOne> dayOneByCountryList,
                                                       DayOneViewModel dayOneViewModel)
         {
             return dayOneByCountryList
                     .Where(day => day.Country.Equals(dayOneViewModel.Country) && day.Status.Equals(dayOneViewModel.StatusType))
                     .OrderByDescending(day => day.Date.Date);
         }
-
     }
 }

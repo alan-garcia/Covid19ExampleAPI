@@ -1,6 +1,7 @@
 ﻿using Example.Covid19.WebUI.Config;
 using Example.Covid19.WebUI.DTO.SummaryCases;
 using Example.Covid19.WebUI.Services;
+using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
@@ -14,6 +15,8 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class SummaryController : BaseController
     {
+        private const int PAGE_SIZE = 15;
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
@@ -29,15 +32,18 @@ namespace Example.Covid19.WebUI.Controllers
         ///     Obtiene toda la información relacionada con el resumen global y los casos por países
         /// </summary>
         /// <returns>La vista con el resumen global de los casos por países</returns>
-        public async Task<ActionResult<Summary>> GetSummary(int? page)
+        public async Task<ActionResult<SummaryViewModel>> GetSummary(int? page)
         {
             Summary summary = await GetRequestData<Summary>(AppSettingsConfig.SUMMARY_KEY);
+
             int pageNumber = page ?? 1;
+            SummaryViewModel summaryViewModel = new SummaryViewModel
+            {
+                Summary = summary,
+                CountriesSummary = summary.Countries.ToPagedList(pageNumber, PAGE_SIZE)
+            };
 
-            ViewBag.SummaryCountriesPagedList = summary.Countries.ToPagedList(pageNumber, 15);
-
-            return View("Summary", summary);
+            return View("Index", summaryViewModel);
         }
-
     }
 }

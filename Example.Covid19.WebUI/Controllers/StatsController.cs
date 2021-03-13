@@ -1,6 +1,7 @@
 ﻿using Example.Covid19.WebUI.Config;
 using Example.Covid19.WebUI.DTO.StatsCases;
 using Example.Covid19.WebUI.Services;
+using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
@@ -27,12 +28,15 @@ namespace Example.Covid19.WebUI.Controllers
         ///     Obtiene toda la información relacionada con las estadísticas globales de los casos de COVID-19
         /// </summary>
         /// <returns>La vista con las estadísticas globales de los casos de COVID-19</returns>
-        public async Task<ActionResult<Stat>> GetStats()
+        public async Task<ActionResult<StatViewModel>> GetStats()
         {
             Stat stats = await GetRequestData<Stat>(AppSettingsConfig.STATS_KEY);
+            StatViewModel statViewModel = new StatViewModel
+            {
+                Stat = stats
+            };
 
-            return View("Stats", stats);
+            return View("Index", statViewModel);
         }
-
     }
 }

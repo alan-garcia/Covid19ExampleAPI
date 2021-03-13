@@ -23,9 +23,7 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class LiveByCountryAndStatusAfterDateController : BaseController
     {
-        private const string COUNTRYNAME_PLACEHOLDER = "{countryName}";
-        private const string STATUS_PLACEHOLDER = "{status}";
-        private const string DATE_PLACEHOLDER = "{date}";
+        private const int PAGE_SIZE = 15;
 
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
@@ -44,13 +42,7 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var dayOneLiveViewModel = new LiveByCountryAndStatusAfterDateViewModel
-            {
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
-
-            return View(dayOneLiveViewModel);
+            return View(await GetCountriesViewModel<LiveByCountryAndStatusAfterDateViewModel>());
         }
 
         /// <summary>
@@ -60,21 +52,14 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los casos en directo de los países con sus estados, después de una fecha dada</returns>
         public async Task<ActionResult<IEnumerable<LiveByCountryAndStatusAfterDate>>> GetLiveByCountryAndStatusAfterDate(int? page)
         {
-            string liveByCountryAndStatusAfterDateListFilter = HttpContext.Session.GetString("LiveByCountryAndStatusAfterDateListFilter");
-            IEnumerable<LiveByCountryAndStatusAfterDate> liveByCountryAndStatusAfterDateListFilterDeserialized = 
-                JsonConvert.DeserializeObject<IEnumerable<LiveByCountryAndStatusAfterDate>>(liveByCountryAndStatusAfterDateListFilter);
+            string liveByCountryAndStatusAfterDateSearchFilter = HttpContext.Session.GetString("LiveByCountryAndStatusAfterDateSearchFilter");
+            IEnumerable<LiveByCountryAndStatusAfterDate> liveByCountryAndStatusAfterDateSearchFilterDeserialized = 
+                JsonConvert.DeserializeObject<IEnumerable<LiveByCountryAndStatusAfterDate>>(liveByCountryAndStatusAfterDateSearchFilter);
 
             int pageNumber = page ?? 1;
-            HttpContext.Session.SetString("LiveByCountryAndStatusAfterDateListFilter", JsonConvert.SerializeObject(liveByCountryAndStatusAfterDateListFilterDeserialized));
-
-            ViewBag.LiveByCountryAndStatusAfterDateListFilter = liveByCountryAndStatusAfterDateListFilterDeserialized.ToPagedList(pageNumber, 15);
-
-            LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel = new LiveByCountryAndStatusAfterDateViewModel
-            {
-                LiveByCountryAndStatusAfterDate = liveByCountryAndStatusAfterDateListFilterDeserialized,
-                Countries = await GetCountries(),
-                StatusTypeList = StatusType.GetStatusTypeList()
-            };
+            var liveByCountryAndStatusAfterDateViewModel = await GetCountriesViewModel<LiveByCountryAndStatusAfterDateViewModel>();
+            liveByCountryAndStatusAfterDateViewModel.LiveByCountryAndStatusAfterDate = 
+                liveByCountryAndStatusAfterDateSearchFilterDeserialized.ToPagedList(pageNumber, PAGE_SIZE);
 
             return View("Index", liveByCountryAndStatusAfterDateViewModel);
         }
@@ -98,33 +83,20 @@ namespace Example.Covid19.WebUI.Controllers
 
                 IEnumerable<LiveByCountryAndStatusAfterDate> liveByCountryAndStatusAfterDateUrlList = 
                     await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(liveByCountryAndStatusAfterDateUrl);
-
-                IEnumerable<LiveByCountryAndStatusAfterDate> liveByCountryAndStatusAfterDateFilter = 
+                IEnumerable<LiveByCountryAndStatusAfterDate> liveByCountryAndStatusAfterDateSearchFilter = 
                     ApplySearchFilter(liveByCountryAndStatusAfterDateUrlList, liveByCountryAndStatusAfterDateViewModel);
 
-                liveByCountryAndStatusAfterDateViewModel.LiveByCountryAndStatusAfterDate = liveByCountryAndStatusAfterDateFilter;
-
                 int pageNumber = page ?? 1;
-                HttpContext.Session.SetString("LiveByCountryAndStatusAfterDateListFilter", JsonConvert.SerializeObject(liveByCountryAndStatusAfterDateFilter));
-
-                ViewBag.LiveByCountryAndStatusAfterDateListFilter = liveByCountryAndStatusAfterDateFilter.ToPagedList(pageNumber, 15);
+                liveByCountryAndStatusAfterDateViewModel.LiveByCountryAndStatusAfterDate =
+                    liveByCountryAndStatusAfterDateSearchFilter.ToPagedList(pageNumber, PAGE_SIZE);
+                HttpContext.Session.SetString("LiveByCountryAndStatusAfterDateSearchFilter",
+                                              JsonConvert.SerializeObject(liveByCountryAndStatusAfterDateSearchFilter));
             }
 
             liveByCountryAndStatusAfterDateViewModel.Countries = await GetCountries();
             liveByCountryAndStatusAfterDateViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", liveByCountryAndStatusAfterDateViewModel);
-        }
-
-        /// <summary>
-        ///     Obtiene todos los datos relacionados con el país
-        /// </summary>
-        /// <returns>La lista de países en un elemento HTML de tipo "desplegable" para ser mostrado en la vista</returns>
-        private async Task<IEnumerable<SelectListItem>> GetCountries()
-        {
-            IEnumerable<Countries> countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
-
-            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
         }
 
         /// <summary>
@@ -136,14 +108,12 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La URL de la API "live/country/status/date" con los parámetros de búsqueda sustituídos</returns>
         private string ExtractPlaceholderUrlApi(LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel)
         {
-            string liveByCountryAndStatusAfterDateApiUrlPlaceHolder = _config.GetValue<string>(
-                $"{AppSettingsConfig.COVID19API_KEY}:{AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_AFTERDATE_KEY}"
-            );
+            string liveByCountryAndStatusAfterDateApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_AFTERDATE_KEY);
 
-            return new StringBuilder(liveByCountryAndStatusAfterDateApiUrlPlaceHolder)
-                    .Replace(COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Country)
-                    .Replace(STATUS_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.StatusType)
-                    .Replace(DATE_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Date.ToString("yyyy-MM-ddThh:mm:ssZ"))
+            return new StringBuilder(liveByCountryAndStatusAfterDateApiUrl)
+                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Country)
+                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.StatusType)
+                    .Replace(AppSettingsConfig.DATE_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Date.ToString("yyyy-MM-ddThh:mm:ssZ"))
                     .ToString();
         }
 

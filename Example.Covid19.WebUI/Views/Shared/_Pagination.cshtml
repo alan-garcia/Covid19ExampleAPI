@@ -1,0 +1,22 @@
+﻿@using X.PagedList;
+@using X.PagedList.Mvc.Core;
+@using X.PagedList.Mvc.Core.Common;
+
+@model IPagedList<Object>
+
+<div>
+  @if (ViewData["actionName"] != null)
+  {
+    @Html.PagedListPager(Model, page => Url.Action(ViewData["actionName"].ToString(), new { page = page }),
+      new PagedListRenderOptions
+      {
+        LinkToFirstPageFormat = "<< Primera",
+        LinkToPreviousPageFormat = "< Anterior",
+        LinkToNextPageFormat = "Siguiente >",
+        LinkToLastPageFormat = "&Uacute;ltima >>",
+        LiElementClasses = new string[] { "page-item" },
+        PageClasses = new string[] { "page-link" }
+      }
+    )
+  }
+</div>

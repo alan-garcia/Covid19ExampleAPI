@@ -1,8 +1,4 @@
-﻿@using X.PagedList;
-@using X.PagedList.Mvc.Core;
-@using X.PagedList.Mvc.Core.Common;
-
-@model Example.Covid19.WebUI.ViewModels.DayOneTotalViewModel
+﻿@model Example.Covid19.WebUI.ViewModels.DayOneTotalViewModel
 @{
   ViewData["Title"] = "Day One Total";
 }
@@ -30,19 +26,7 @@
   }
   else
   {
-    var dayOneTotalByCountryListFilter = ViewBag.DayOneTotalByCountryListFilter;
-
-    @Html.PagedListPager((IPagedList)dayOneTotalByCountryListFilter, page => Url.Action("GetDayOneTotalByCountry", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
+    <partial name="_Pagination" model="Model.DayOneTotal" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetDayOneTotalByCountry" } }'/>
 
     <table class="table table-bordered">
       <thead>
@@ -56,7 +40,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach (var dayOneTotal in dayOneTotalByCountryListFilter)
+        @foreach (var dayOneTotal in Model.DayOneTotal)
         {
           <tr class="text-center">
             <td>@dayOneTotal.Country</td>
@@ -70,16 +54,6 @@
       </tbody>
     </table>
 
-    @Html.PagedListPager((IPagedList)dayOneTotalByCountryListFilter, page => Url.Action("GetDayOneTotalByCountry", new { page = page }),
-        new PagedListRenderOptions
-        {
-          LinkToFirstPageFormat = "<< Primera",
-          LinkToPreviousPageFormat = "< Anterior",
-          LinkToNextPageFormat = "Siguiente >",
-          LinkToLastPageFormat = "&Uacute;ltima >>",
-          LiElementClasses = new string[] { "page-item" },
-          PageClasses = new string[] { "page-link" }
-        }
-    )
+    <partial name="_Pagination" model="Model.DayOneTotal" view-data='@new ViewDataDictionary(ViewData) { { "actionName", "GetDayOneTotalByCountry" } }' />
   }
 }

@@ -1,6 +1,7 @@
 ﻿using Example.Covid19.WebUI.Config;
 using Example.Covid19.WebUI.DTO.Cases.CountriesCases;
 using Example.Covid19.WebUI.Services;
+using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
@@ -15,6 +16,8 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class CountriesController : BaseController
     {
+        private const int PAGE_SIZE = 15;
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
@@ -31,16 +34,18 @@ namespace Example.Covid19.WebUI.Controllers
         /// </summary>
         /// <param name="page">Número de página actual de la paginación</param>
         /// <returns>La vista con la lista de todos los países</returns>
-        public async Task<ActionResult<IEnumerable<Countries>>> GetCountries(int? page)
+        public async Task<ActionResult<CountriesViewModel>> GetCountries(int? page)
         {
             IEnumerable<Countries> countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
-            countries = countries.OrderBy(c => c.Country);
 
             int pageNumber = page ?? 1;
-            ViewBag.CountriesPagedList = countries.ToPagedList(pageNumber, 15);
+            CountriesViewModel countriesViewModel = new CountriesViewModel
+            {
+                Countries = countries.OrderBy(c => c.Country)
+                                     .ToPagedList(pageNumber, PAGE_SIZE)
+            };
 
-            return View("Countries", countries);
+            return View("Index", countriesViewModel);
         }
-
     }
 }
