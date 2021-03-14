@@ -7,16 +7,16 @@
 
 <div class="mb-3">
   <div asp-validation-summary="All" class="text-danger"></div>
-  <form class="form-inline my-2 my-lg-0" asp-controller="ByCountry" asp-action="GetByCountry" method="post">
-    <select class="custom-select" asp-for="Country" asp-items="@Model.Countries">
+  <form class="form-inline" method="post" asp-controller="ByCountry" asp-action="GetByCountry">
+    <select class="form-control mx-2" asp-for="Country" asp-items="@Model.Countries">
       <option selected value="">-- Seleccione un país --</option>
     </select>
-    <select class="custom-select" asp-for="StatusType" asp-items="@Model.StatusTypeList">
-      <option selected value="">-- Seleccione estado caso --</option>
+    <select class="form-control mx-2" asp-for="StatusType" asp-items="@Model.StatusTypeList">
+      <option selected value="">-- Seleccione tipo de caso --</option>
     </select>
-    <input type="date" id="byCountryDateFrom" class="custom-select" asp-for="DateFrom" />
-    <input type="date" id="byCountryDateTo" class="custom-select" asp-for="DateTo" />
-    <button id="byCountrySearchButton" class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar</button>
+    <input type="date" id="byCountryDateFrom" class="form-control mx-2" asp-for="DateFrom" />
+    <input type="date" id="byCountryDateTo" class="form-control mx-2" asp-for="DateTo" />
+    <button id="byCountrySearchButton" class="btn btn-outline-success mx-2" type="submit">Buscar</button>
   </form>
 </div>
 
