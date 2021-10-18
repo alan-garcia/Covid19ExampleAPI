@@ -1,0 +1,235 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Example.Covid19.API</name>
+    </assembly>
+    <members>
+        <member name="T:Example.Covid19.API.Controllers.Covid19Controller">
+            <summary>
+                Controlador que contienen todos los accesos a la API de COVID-19
+            </summary>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.#ctor(Example.Covid19.API.Services.IApiService,Microsoft.Extensions.Options.IOptions{Example.Covid19.API.Models.CovidApiAppSettingsModel})">
+            <summary>
+                Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
+            </summary>
+            <param name="apiService">El servicio de la API de la cual va a consumir</param>
+            <param name="appSettings">El fichero de configuración "appsettings.json"</param>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetSummary">
+            <summary>
+                Obtiene el resumen global y los casos por países con la última fecha actualizada de los datos
+            </summary>
+            <returns>Resumen global y los casos por países</returns>
+            <response code="200">Resumen global y los casos por países</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetCountries">
+            <summary>
+                Obtiene todos los datos relacionados con el país
+            </summary>
+            <returns>Lista de todos los países</returns>
+            <response code="200">Listado de paises</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetDayOneByCountry(System.String)">
+            <summary>
+                Obtiene los casos por tipo para un país desde el primer caso de COVID conocido
+            </summary>
+            <param name="countryName">Nombre del país a buscar</param>
+            <returns>Lista de los casos del país indicado</returns>
+            <response code="200">Lista de los casos del país indicado</response>
+            <response code="500">Si el nombre del país indicado no existe</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetDayOneLiveByCountry(System.String)">
+            <summary>
+                Obtiene los casos por tipo para un país desde el primer caso de COVID conocido (en directo)
+            </summary>
+            <param name="countryName">Nombre del país a buscar</param>
+            <returns>Lista de los casos del país indicado</returns>
+            <response code="200">Lista de los casos del país indicado (en directo)</response>
+            <response code="500">Si el nombre del país indicado no existe</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetDayOneTotalByCountry(System.String)">
+            <summary>
+                Obtiene todos los casos por tipo para un país desde el primer caso de COVID conocido
+            </summary>
+            <param name="countryName">Nombre del país a buscar</param>
+            <returns>Lista de todos los casos del país indicado</returns>
+            <response code="200">Lista de los casos del país indicado (desde el primer caso)</response>
+            <response code="500">Si el nombre del país indicado no existe</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetByCountry(System.String)">
+            <summary>
+                Obtiene los casos por tipo para un país
+            </summary>
+            <param name="countryName">Nombre del país a buscar</param>
+            <returns>Lista de todos los casos del país indicado</returns>
+            <response code="200">Lista de los casos del país indicado</response>
+            <response code="500">Si el nombre del país indicado no existe</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetByCountryLive(System.String)">
+            <summary>
+                Obtiene los casos por tipo para un país (en directo)
+            </summary>
+            <param name="countryName">Nombre del país a buscar</param>
+            <returns>Lista de todos los casos del país indicado</returns>
+            <response code="200">Lista de los casos del país indicado (en directo)</response>
+            <response code="500">Si el nombre del país indicado no existe</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetByCountryTotal(System.String)">
+            <summary>
+                Obtiene todos los casos por tipo para un país
+            </summary>
+            <param name="countryName">Nombre del país a buscar</param>
+            <returns>Lista de todos los casos del país indicado</returns>
+            <response code="200">Lista de taodos los casos del país indicado</response>
+            <response code="500">Si el nombre del país indicado no existe</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetLiveByCountryAndStatus(System.String,System.String)">
+            <summary>
+                Obtiene los datos en directo de los países y sus estados
+            </summary>
+            <remarks>
+                Valores disponibles para "status": confirmed, deaths, recovered
+            </remarks>
+            <param name="countryName">Nombre del país a buscar</param>
+            <param name="status">Tipo de estado a buscar</param>
+            <returns>Lista de todos los casos en directo de los países que cumpla el criterio del estado</returns>
+            <response code="200">Lista de los casos del país indicado (en directo) con un estado específico</response>
+            <response code="500">Si el nombre del país o el tipo de estado indicado no existe</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetLiveByCountryAndStatusAfterDate(System.String,System.String,System.DateTime)">
+            <summary>
+                Obtiene los datos en directo de los países y sus estados después de una fecha dada
+            </summary>
+            <remarks>
+                Valores disponibles para "status": confirmed, deaths, recovered
+            </remarks>
+            <param name="countryName">Nombre del país a buscar</param>
+            <param name="status">Tipo de estado a buscar</param>
+            <param name="date">Casos a buscar después de una fecha especificada</param>
+            <returns>Lista de todos los casos en directo de los países que cumpla el criterio del estado, dado una fecha</returns>
+            <response code="200">Lista de los casos del país indicado (en directo) a partir de una fecha dada, con un estado específico</response>
+            <response code="500">Si el nombre del país, tipo de estado o fecha son erróneas</response>
+        </member>
+        <member name="M:Example.Covid19.API.Controllers.Covid19Controller.GetStats">
+            <summary>
+                Obtiene toda la información relacionada con las estadísticas globales de los casos de COVID-19
+            </summary>
+            <returns>Estadísticas globales de los casos de COVID-19</returns>
+            <response code="200">Estadísticas globales de los casos</response>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.CommonCases.CountryAndStatusCasesBase">
+            <summary>
+                Representan los campos comunes para el apartado de los países y los estados
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.CommonCases.SummaryCasesBase">
+            <summary>
+                Representan los campos comunes para el resumen de los casos de COVID-19
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.CountriesCases.ByCountry">
+            <summary>
+                Representan los casos por tipo para un país
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.CountriesCases.ByCountryLive">
+            <summary>
+                Representan los casos por tipo para un país (en directo)
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.CountriesCases.ByCountryTotal">
+            <summary>
+                Representan todos los casos por tipo para un país
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.DayOneCases.DayOne">
+            <summary>
+                Representan los casos por tipo para un país desde el primer caso de COVID conocido
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.DayOneCases.DayOneLive">
+            <summary>
+                Representan los casos por tipo para un país, desde el primer caso de COVID conocido 
+                con el último registro siendo el conteo en directo.
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.DayOneCases.DayOneTotal">
+            <summary>
+                Representan todos los casos totales por tipo de caso para un país, desde el primer caso de COVID conocido
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.LiveByCountryCases.LiveByCountryAndStatus">
+            <summary>
+                Representan los datos en directo de los países y sus estados
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.LiveByCountryCases.LiveByCountryAndStatusAfterDate">
+            <summary>
+                Representan los datos en directo de los países y sus estados después de una fecha dada
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.StatsCases.Stat">
+            <summary>
+                Representan las estadísticas globales de los casos de COVID-19
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.SummaryCases.CountryInfo">
+            <summary>
+                Representan los casos de COVID-19 por países
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.SummaryCases.Global">
+            <summary>
+                Modelo que representa el resumen global de los casos del COVID-19
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.DTO.SummaryCases.Summary">
+            <summary>
+                Modelo que representa el resumen global y los casos por países con la última fecha actualizada de los datos
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.Models.CovidApiAppSettingsModel">
+            <summary>
+                Representa el modelo de las opciones a cargar para el fichero "appsettings.json"
+            </summary>
+        </member>
+        <member name="T:Example.Covid19.API.Services.ApiService">
+            <summary>
+                Implementación del servicio para describir los servicios de la API a consumir
+            </summary>
+        </member>
+        <member name="F:Example.Covid19.API.Services.ApiService._baseApiUrl">
+            <summary>
+                URL base de la API, indicada en la propiedad "UrlBase" del fichero "appsettings.json".
+            </summary>
+        </member>
+        <member name="F:Example.Covid19.API.Services.ApiService._loginTimeOut">
+            <summary>
+                Tiempo límite asignado para conectarse a la API (en segundos)
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:Example.Covid19.API.Services.ApiService.#ctor(Microsoft.Extensions.Options.IOptions{Example.Covid19.API.Models.CovidApiAppSettingsModel})" -->
+        <member name="M:Example.Covid19.API.Services.ApiService.GetAsync``1(System.String)">
+            <summary>
+                Obtiene los datos de la API con base en una URL concreta
+            </summary>
+            <typeparam name="T">API concreta a consumir</typeparam>
+            <param name="apiUrl">URL concreta de la API</param>
+            <returns>Toda la información relacionada con la API especificada en la URL</returns>
+        </member>
+        <member name="T:Example.Covid19.API.Services.IApiService">
+            <summary>
+                Contracto para describir los servicios de la API a consumir
+            </summary>
+        </member>
+        <member name="M:Example.Covid19.API.Services.IApiService.GetAsync``1(System.String)">
+            <summary>
+                Obtiene los datos de la API con base en una URL concreta
+            </summary>
+            <typeparam name="T">API concreta a consumir</typeparam>
+            <param name="apiUrl">URL concreta de la API</param>
+            <returns>Toda la información relacionada con la API especificada en la URL</returns>
+        </member>
+    </members>
+</doc>
