@@ -1,0 +1,63 @@
+﻿@model Example.Covid19.WebUI.ViewModels.ByCountryTotalViewModel
+@{
+  ViewData["Title"] = "By Country Total";
+}
+
+<h1 class="text-center">By Country Total</h1>
+
+<div class="container mb-3">
+  <div asp-validation-summary="All" class="text-danger"></div>
+  <form class="form-inline" asp-controller="ByCountryTotal" asp-action="GetByCountryTotal">
+    <select class="form-control mx-2" asp-for="Country" asp-items="@Model.Countries"></select>
+    <select class="form-control mx-2" asp-for="StatusType" asp-items="@Model.StatusTypeList"></select>
+    <input type="date" id="byCountryTotalDateFrom" class="form-control mx-2" asp-for="DateFrom" />
+    <input type="date" id="byCountryTotalDateTo" class="form-control mx-2" asp-for="DateTo" />
+    <button id="byCountryTotalSearchButton" class="btn btn-outline-success mx-2" type="submit">Buscar</button>
+  </form>
+</div>
+
+@if (Model.ByCountryTotal != null)
+{
+  if (Model.ByCountryTotal.Count() == 0)
+  {
+    <div class="alert alert-info">No hay resultados para esta búsqueda. Inténtalo de nuevo con otro criterio.</div>
+  }
+  else
+  {
+    <div class="container">
+      <table id="byCountryTotalTable" class="table table-bordered">
+          <thead>
+            <tr class="text-center">
+              <th scope="col">País</th>
+              <th scope="col">Código País</th>
+              <th scope="col">Latitud</th>
+              <th scope="col">Longitud</th>
+              <th scope="col">Casos</th>
+              <th scope="col">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var byCountryTotal in Model.ByCountryTotal)
+            {
+              <tr class="text-center">
+                <td>@byCountryTotal.Country</td>
+                <td>@byCountryTotal.CountryCode</td>
+                <td>@byCountryTotal.Lat</td>
+                <td>@byCountryTotal.Lon</td>
+                <td>@byCountryTotal.Cases</td>
+                <td>@byCountryTotal.Date.ToString("dd/MM/yyyy")</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+    </div>
+  }
+}
+
+@section Scripts {
+  <script type="text/javascript">
+    $(function () {
+      $("#byCountryTotalTable").DataTable();
+    });
+  </script>
+}

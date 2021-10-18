@@ -1,0 +1,61 @@
+﻿@model Example.Covid19.WebUI.ViewModels.DayOneTotalViewModel
+@{
+  ViewData["Title"] = "Day One Total";
+}
+
+<h1 class="text-center">Day One Total</h1>
+
+<div class="container mb-3">
+  <div asp-validation-summary="All" class="text-danger"></div>
+  <form class="form-inline" asp-controller="DayOneTotal" asp-action="GetDayOneTotalByCountry">
+    <select class="form-control mx-2" asp-for="Country" asp-items="@Model.Countries"></select>
+    <select class="form-control mx-2" asp-for="StatusType" asp-items="@Model.StatusTypeList"></select>
+    <button id="dayOneLiveSearchButton" class="btn btn-outline-success mx-2" type="submit">Buscar</button>
+  </form>
+</div>
+
+@if (Model.DayOneTotal != null)
+{
+  if (Model.DayOneTotal.Count() == 0)
+  {
+    <div class="alert alert-info">No hay resultados para esta búsqueda. Inténtalo de nuevo con otro criterio.</div>
+  }
+  else
+  {
+    <div class="container">
+      <table id="dayOneTotalTable" class="table table-bordered">
+        <thead>
+          <tr class="text-center">
+            <th scope="col">País</th>
+            <th scope="col">Código País</th>
+            <th scope="col">Latitud</th>
+            <th scope="col">Longitud</th>
+            <th scope="col">Casos</th>
+            <th scope="col">Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (var dayOneTotal in Model.DayOneTotal)
+          {
+            <tr class="text-center">
+              <td>@dayOneTotal.Country</td>
+              <td>@dayOneTotal.CountryCode</td>
+              <td>@dayOneTotal.Lat</td>
+              <td>@dayOneTotal.Lon</td>
+              <td>@dayOneTotal.Cases</td>
+              <td>@dayOneTotal.Date.ToString("dd/MM/yyyy")</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@section Scripts {
+  <script type="text/javascript">
+    $(function () {
+      $("#dayOneTotalTable").DataTable();
+    });
+  </script>
+}

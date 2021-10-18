@@ -1,0 +1,71 @@
+﻿@model Example.Covid19.WebUI.ViewModels.LiveByCountryAndStatusViewModel
+@{
+  ViewData["Title"] = "Live By Country and Status";
+}
+
+<h1 class="text-center">Live By Country And Status</h1>
+
+<div class="container mb-3">
+  <div asp-validation-summary="All" class="text-danger"></div>
+  <form class="form-inline" asp-controller="LiveByCountryAndStatus" asp-action="GetLiveByCountryAndStatus">
+    <select class="form-control mx-2" asp-for="Country" asp-items="@Model.Countries"></select>
+    <select class="form-control mx-2" asp-for="StatusType" asp-items="@Model.StatusTypeList"></select>
+    <button id="liveByCountryAndStatusSearchButton" class="btn btn-outline-success mx-2" type="submit">Buscar</button>
+  </form>
+</div>
+
+@if (Model.LiveByCountryAndStatus != null)
+{
+  if (Model.LiveByCountryAndStatus.Count() == 0)
+  {
+    <div class="alert alert-info">No hay resultados para esta búsqueda. Inténtalo de nuevo con otro criterio.</div>
+  }
+  else
+  {
+    <table id="liveByCountryStatusTable" class="table table-bordered">
+      <thead>
+        <tr class="text-center">
+          <th scope="col">País</th>
+          <th scope="col">Código País</th>
+          <th scope="col">Provincia</th>
+          <th scope="col">Ciudad</th>
+          <th scope="col">Código Ciudad</th>
+          <th scope="col">Latitud</th>
+          <th scope="col">Longitud</th>
+          <th scope="col">Confirmados</th>
+          <th scope="col">Muertes</th>
+          <th scope="col">Recuperados</th>
+          <th scope="col">Activos</th>
+          <th scope="col">Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach (var liveByCountryAndStatus in Model.LiveByCountryAndStatus)
+        {
+          <tr class="text-center">
+            <td>@liveByCountryAndStatus.Country</td>
+            <td>@liveByCountryAndStatus.CountryCode</td>
+            <td>@liveByCountryAndStatus.Province</td>
+            <td>@liveByCountryAndStatus.City</td>
+            <td>@liveByCountryAndStatus.CityCode</td>
+            <td>@liveByCountryAndStatus.Lat</td>
+            <td>@liveByCountryAndStatus.Lon</td>
+            <td>@liveByCountryAndStatus.Confirmed</td>
+            <td>@liveByCountryAndStatus.Deaths</td>
+            <td>@liveByCountryAndStatus.Recovered</td>
+            <td>@liveByCountryAndStatus.Active</td>
+            <td>@liveByCountryAndStatus.Date.ToString("dd/MM/yyyy")</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}
+
+@section Scripts {
+  <script type="text/javascript">
+    $(function () {
+      $("#liveByCountryStatusTable").DataTable();
+    });
+  </script>
+}

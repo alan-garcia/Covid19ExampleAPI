@@ -1,0 +1,70 @@
+﻿@model Example.Covid19.WebUI.ViewModels.StatViewModel
+@{ 
+  ViewData["Title"] = "Estadísticas";
+  var Stat = Model.Stat;
+}
+
+<h1 class="text-center">Estadísticas</h1>
+
+<div class="container mb-5 mt-3">
+  <table class="table table-bordered" style="width:50%;margin:auto;">
+    <tbody>
+      <tr>
+        <th class="col-lg-6">Total</th>
+        <td>@Stat.Total</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">All</th>
+        <td>@Stat.Total</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Countries</th>
+        <td>@Stat.Countries</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">By Country</th>
+        <td>@Stat.ByCountry</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">By Country Live</th>
+        <td>@Stat.ByCountryLive</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">By Country Total</th>
+        <td>@Stat.ByCountryTotal</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Day One</th>
+        <td>@Stat.DayOne</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Day One Live</th>
+        <td>@Stat.DayOneLive</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Day One Total</th>
+        <td>@Stat.DayOneTotal</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Live Country Status</th>
+        <td>@Stat.LiveCountryStatus</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Live Country Status After Date</th>
+        <td>@Stat.LiveCountryStatusAfterDate</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Default</th>
+        <td>@Stat.Default</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Stats</th>
+        <td>@Stat.Stats</td>
+      </tr>
+      <tr>
+        <th class="col-lg-6">Summary</th>
+        <td>@Stat.Summary</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,93 @@
+﻿@model Example.Covid19.WebUI.ViewModels.SummaryViewModel
+@{ 
+  ViewData["Title"] = "Resumen";
+
+  var summary = Model.Summary;
+  var summaryNewConfirmedClass = summary.Global.NewConfirmed > 0 ? "class=text-warning" : "";
+  var summaryNewDeathsClass = summary.Global.NewDeaths > 0 ? "class=text-danger" : "";
+  var summaryNewRecoveredClass = summary.Global.NewRecovered > 0 ? "class=text-success" : "";
+ }
+
+<h1 class="text-center">Resumen</h1>
+
+<div class="container mb-5 mt-3">
+  <div class="row">
+    <div class="col">
+      <h2>Global</h2>
+      <p><strong>Fecha actualizada:</strong> @summary.Date</p>
+    </div>
+
+    <table class="table table-bordered">
+      <thead>
+        <tr class="text-center">
+          <th scope="col">Casos nuevos</th>
+          <th scope="col">Total casos</th>
+          <th scope="col">Muertes nuevas</th>
+          <th scope="col">Total muertos</th>
+          <th scope="col">Nuevas recuperadas</th>
+          <th scope="col">Total recuperadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="text-center">
+          <td @(summaryNewConfirmedClass)>@summary.Global.NewConfirmed</td>
+          <td class="bg-warning">@summary.Global.TotalConfirmed</td>
+          <td @(summaryNewDeathsClass)>@summary.Global.NewDeaths</td>
+          <td class="bg-danger text-white">@summary.Global.TotalDeaths</td>
+          <td @(summaryNewRecoveredClass)>@summary.Global.NewRecovered</td>
+          <td class="bg-success text-white">@summary.Global.TotalRecovered</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <h2>Casos por países</h2>
+      <p><strong>Fecha actualizada:</strong> @summary.Date</p>
+    </div>
+  </div>
+  <div class="row">
+    <table id="summaryTable" class="table table-bordered">
+      <thead>
+        <tr class="text-center">
+          <th scope="col">País</th>
+          <th scope="col">Casos nuevos</th>
+          <th scope="col">Total casos</th>
+          <th scope="col">Muertes nuevas</th>
+          <th scope="col">Total muertos</th>
+          <th scope="col">Nuevas recuperadas</th>
+          <th scope="col">Total recuperadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach (var country in Model.CountriesSummary)
+        {
+          var countryNewConfirmedClass = country.NewConfirmed > 0 ? "class=text-warning" : "";
+          var countryNewDeathsClass = country.NewDeaths > 0 ? "class=text-danger" : "";
+          var countryNewRecoveredClass = country.NewRecovered > 0 ? "class=text-success" : "";
+
+  <tr class="text-center">
+    <td>@country.Country</td>
+    <td @(countryNewConfirmedClass)>@country.NewConfirmed</td>
+    <td class="bg-warning">@country.TotalConfirmed</td>
+    <td @(countryNewDeathsClass)>@country.NewDeaths</td>
+    <td class="bg-danger text-white">@country.TotalDeaths</td>
+    <td @(countryNewRecoveredClass)>@country.NewRecovered</td>
+    <td class="bg-success text-white">@country.TotalRecovered</td>
+  </tr>
+}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@section Scripts {
+  <script type="text/javascript">
+    $(function () {
+      $("#summaryTable").DataTable();
+    });
+  </script>
+}
