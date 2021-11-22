@@ -14,15 +14,18 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class SummaryController : BaseController
     {
+        private string getSummaryCacheKey = "getSummary";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public SummaryController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        public SummaryController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -31,14 +34,19 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con el resumen global de los casos por países</returns>
         public async Task<ActionResult<SummaryViewModel>> GetSummary()
         {
-            Summary summary = await GetRequestData<Summary>(AppSettingsConfig.SUMMARY_KEY);
-            SummaryViewModel summaryViewModel = new()
+            if (!_cache.Get(getSummaryCacheKey, out SummaryViewModel summaryVM))
             {
-                Summary = summary,
-                CountriesSummary = summary.Countries
-            };
+                var summary = await GetRequestData<Summary>(AppSettingsConfig.SUMMARY_KEY);
+                summaryVM = new SummaryViewModel()
+                {
+                    Summary = summary,
+                    CountriesSummary = summary.Countries
+                };
 
-            return View("Index", summaryViewModel);
+                _cache.Set(getSummaryCacheKey, summaryVM);
+            }
+
+            return View("Index", summaryVM);
         }
     }
 }

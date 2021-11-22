@@ -2,7 +2,6 @@
 using Example.Covid19.API.DTO.DayOneCases;
 using Example.Covid19.API.Services;
 using Example.Covid19.WebUI.Config;
-using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -18,15 +17,19 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class DayOneLiveController : BaseController
     {
+        private string dayOneLiveCacheKey = "dayOneLive";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public DayOneLiveController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        /// <param name="cache">La caché en memoria</param>
+        public DayOneLiveController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -35,13 +38,15 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var dayOneLiveViewModel = await GetCountriesViewModel<DayOneLiveViewModel>();
-            string dayOneLiveUrl = ExtractPlaceholderUrlApi(dayOneLiveViewModel);
-            var dayOneLiveList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneLiveUrl);
-            var dayOneLiveSearchFilter = ApplySearchFilter(dayOneLiveList, dayOneLiveViewModel);
-            dayOneLiveViewModel.DayOneLive = dayOneLiveSearchFilter;
+            if (!_cache.Get(dayOneLiveCacheKey, out DayOneLiveViewModel dayOneLiveVM))
+            {
+                dayOneLiveVM = await GetCountriesViewModel<DayOneLiveViewModel>();
+                string dayOneLiveUrl = ExtractPlaceholderUrlApi(dayOneLiveVM);
+                var dayOneLiveList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneLiveUrl);
+                dayOneLiveVM.DayOneLive = ApplySearchFilter(dayOneLiveList, dayOneLiveVM);
+            }
 
-            return View(dayOneLiveViewModel);
+            return View(dayOneLiveVM);
         }
 
         /// <summary>
@@ -56,15 +61,19 @@ namespace Example.Covid19.WebUI.Controllers
         {
             if (ModelState.IsValid)
             {
-                string dayOneLiveUrl = ExtractPlaceholderUrlApi(dayOneLiveViewModel);
-                var dayOneLiveList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneLiveUrl);
-                var dayOneLiveSearchFilter = ApplySearchFilter(dayOneLiveList, dayOneLiveViewModel);
+                dayOneLiveCacheKey = $"{dayOneLiveCacheKey}_{dayOneLiveViewModel.Country}_{dayOneLiveViewModel.StatusType}";
+                if (!_cache.Get(dayOneLiveCacheKey, out DayOneLiveViewModel dayOneLiveVM))
+                {
+                    dayOneLiveVM = await GetCountriesViewModel<DayOneLiveViewModel>();
+                    string dayOneLiveUrl = ExtractPlaceholderUrlApi(dayOneLiveVM);
+                    var dayOneLiveList = await _apiService.GetAsync<IEnumerable<DayOneLive>>(dayOneLiveUrl);
+                    dayOneLiveVM.DayOneLive = ApplySearchFilter(dayOneLiveList, dayOneLiveVM);
 
-                dayOneLiveViewModel.DayOneLive = dayOneLiveSearchFilter;
+                    _cache.Set(dayOneLiveCacheKey, dayOneLiveVM);
+                }
+
+                dayOneLiveViewModel = dayOneLiveVM;
             }
-
-            dayOneLiveViewModel.Countries = await GetCountries();
-            dayOneLiveViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", dayOneLiveViewModel);
         }

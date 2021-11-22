@@ -2,7 +2,6 @@
 using Example.Covid19.API.DTO.LiveByCountryCases;
 using Example.Covid19.API.Services;
 using Example.Covid19.WebUI.Config;
-using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -19,15 +18,19 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class LiveByCountryAndStatusAfterDateController : BaseController
     {
+        private string byCountryStatusAfterDateCacheKey = "byCountryStatusAfterDate";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public LiveByCountryAndStatusAfterDateController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        /// <param name="cache">La caché en memoria</param>
+        public LiveByCountryAndStatusAfterDateController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -36,62 +39,68 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var liveByCountryAndStatusAfterDateViewModel = await GetCountriesViewModel<LiveByCountryAndStatusAfterDateViewModel>();
-            string liveByCountryAndStatusAfterDateUrl = ExtractPlaceholderUrlApi(liveByCountryAndStatusAfterDateViewModel);
-            var liveByCountryAndStatusAfterDateList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(liveByCountryAndStatusAfterDateUrl);
-            var liveByCountryAndStatusAfterDateSearchFilter = ApplySearchFilter(liveByCountryAndStatusAfterDateList, liveByCountryAndStatusAfterDateViewModel);
-            liveByCountryAndStatusAfterDateViewModel.LiveByCountryAndStatusAfterDate = liveByCountryAndStatusAfterDateSearchFilter;
+            if (!_cache.Get(byCountryStatusAfterDateCacheKey, out LiveByCountryAndStatusAfterDateViewModel byCountryStatusAfterDateVM))
+            {
+                byCountryStatusAfterDateVM = await GetCountriesViewModel<LiveByCountryAndStatusAfterDateViewModel>();
+                string byCountryStatusAfterDateUrl = ExtractPlaceholderUrlApi(byCountryStatusAfterDateVM);
+                var byCountryStatusAfterDateList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(byCountryStatusAfterDateUrl);
+                byCountryStatusAfterDateVM.LiveByCountryAndStatusAfterDate = ApplySearchFilter(byCountryStatusAfterDateList, byCountryStatusAfterDateVM);
+            }
 
-            return View(liveByCountryAndStatusAfterDateViewModel);
+            return View(byCountryStatusAfterDateVM);
         }
 
         /// <summary>
         ///     Aplica en el formulario los filtros de búsqueda de los casos en directo de los países y sus estados
         ///     después de una fecha dada
         /// </summary>
-        /// <param name="liveByCountryAndStatusAfterDateViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
+        /// <param name="byCountryStatusAfterDateViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
         /// formulario de búsqueda</param>
         /// <returns>La vista con la lista de todos los casos en directo de los países que cumpla el criterio del estado 
         /// después de una fecha dada</returns>
         [HttpPost]
         public async Task<ActionResult<IEnumerable<LiveByCountryAndStatusAfterDate>>> GetLiveByCountryAndStatusAfterDate(
-            LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel)
+            LiveByCountryAndStatusAfterDateViewModel byCountryStatusAfterDateViewModel)
         {
             if (ModelState.IsValid)
             {
-                string liveByCountryAndStatusAfterDateUrl = ExtractPlaceholderUrlApi(liveByCountryAndStatusAfterDateViewModel);
+                byCountryStatusAfterDateCacheKey = $"{byCountryStatusAfterDateCacheKey}_{byCountryStatusAfterDateViewModel.Country}_{byCountryStatusAfterDateViewModel.StatusType}_{byCountryStatusAfterDateViewModel.Date.ToShortDateString()}";
+                if (!_cache.Get(byCountryStatusAfterDateCacheKey, out LiveByCountryAndStatusAfterDateViewModel byCountryStatusAfterDateVM))
+                {
+                    byCountryStatusAfterDateVM = await GetCountriesViewModel<LiveByCountryAndStatusAfterDateViewModel>();
+                    string byCountryStatusAfterDateUrl = ExtractPlaceholderUrlApi(byCountryStatusAfterDateVM);
 
-                var liveByCountryAndStatusAfterDateUrlList =
-                    await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(liveByCountryAndStatusAfterDateUrl);
-                var liveByCountryAndStatusAfterDateSearchFilter =
-                    ApplySearchFilter(liveByCountryAndStatusAfterDateUrlList, liveByCountryAndStatusAfterDateViewModel);
+                    var byCountryStatusAfterDateUrlList =
+                        await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatusAfterDate>>(byCountryStatusAfterDateUrl);
+                    byCountryStatusAfterDateVM.LiveByCountryAndStatusAfterDate =
+                        ApplySearchFilter(byCountryStatusAfterDateUrlList, byCountryStatusAfterDateVM);
 
-                liveByCountryAndStatusAfterDateViewModel.LiveByCountryAndStatusAfterDate = liveByCountryAndStatusAfterDateSearchFilter;
+                    _cache.Set(byCountryStatusAfterDateCacheKey, byCountryStatusAfterDateVM);
+                }
+
+                byCountryStatusAfterDateViewModel = byCountryStatusAfterDateVM;
             }
 
-            liveByCountryAndStatusAfterDateViewModel.Countries = await GetCountries();
-            liveByCountryAndStatusAfterDateViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-
-            return View("Index", liveByCountryAndStatusAfterDateViewModel);
+            return View("Index", byCountryStatusAfterDateViewModel);
         }
 
         /// <summary>
-        ///     Sustituye los placeholders marcados entre corchetes "{" "}" especificados en el fichero "appsettings.json" 
+        ///     Sustituye los placeholders marcados entre corchetes "{}" especificados en el fichero "appsettings.json" 
         ///     en el apartado "Covid19Api" por los datos filtrados en la vista-modelo recogidas en el formulario de búsqueda
         /// </summary>
-        /// <param name="liveByCountryAndStatusAfterDateViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
+        /// <param name="byCountryStatusAfterDateViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
         /// formulario de búsqueda</param>
         /// <returns>La URL de la API "live/country/status/date" con los parámetros de búsqueda sustituídos</returns>
-        private string ExtractPlaceholderUrlApi(LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel)
+        private string ExtractPlaceholderUrlApi(LiveByCountryAndStatusAfterDateViewModel byCountryStatusAfterDateViewModel)
         {
-            string liveByCountryAndStatusAfterDateApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_AFTERDATE_KEY);
-            liveByCountryAndStatusAfterDateViewModel.Country ??= "Spain";
-            liveByCountryAndStatusAfterDateViewModel.StatusType ??= "confirmed";
+            string byCountryStatusAfterDateApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_AFTERDATE_KEY);
+            byCountryStatusAfterDateViewModel.Country ??= "Spain";
+            byCountryStatusAfterDateViewModel.StatusType ??= "confirmed";
 
-            return new StringBuilder(liveByCountryAndStatusAfterDateApiUrl)
-                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Country)
-                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.StatusType)
-                    .Replace(AppSettingsConfig.DATE_PLACEHOLDER, liveByCountryAndStatusAfterDateViewModel.Date.ToString("yyyy-MM-ddThh:mm:ssZ"))
+            return new StringBuilder(byCountryStatusAfterDateApiUrl)
+                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, byCountryStatusAfterDateViewModel.Country)
+                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, byCountryStatusAfterDateViewModel.StatusType)
+                    .Replace(AppSettingsConfig.DATE_PLACEHOLDER, byCountryStatusAfterDateViewModel.Date.ToString("yyyy-MM-ddThh:mm:ssZ"))
                     .ToString();
         }
 
@@ -99,21 +108,21 @@ namespace Example.Covid19.WebUI.Controllers
         ///     Aplica el filtro de búsqueda para los datos en directo de los países y sus estados 
         ///     después de una fecha dada
         /// </summary>
-        /// <param name="liveByCountryAndStatusUrlList">La lista de países</param>
-        /// <param name="liveByCountryAndStatusViewModel">La vista-modelo que contienen las opciones seleccionadas en el formulario de búsqueda</param>
+        /// <param name="byCountryStatusAfterDateUrlList">La lista de países</param>
+        /// <param name="byCountryStatusAfterDateViewModel">La vista-modelo que contienen las opciones seleccionadas en el formulario de búsqueda</param>
         /// <returns>Lista con los datos en directo de los países y sus estados después de una fecha dada,
         /// ordenadas de fechas más recientes a más antiguas</returns>
         private IEnumerable<LiveByCountryAndStatusAfterDate> ApplySearchFilter
-            (IEnumerable<LiveByCountryAndStatusAfterDate> liveByCountryAndStatusAfterDateUrlList,
-             LiveByCountryAndStatusAfterDateViewModel liveByCountryAndStatusAfterDateViewModel)
+            (IEnumerable<LiveByCountryAndStatusAfterDate> byCountryStatusAfterDateUrlList,
+             LiveByCountryAndStatusAfterDateViewModel byCountryStatusAfterDateViewModel)
         {
-            if (liveByCountryAndStatusAfterDateViewModel.Country == null)
+            if (byCountryStatusAfterDateViewModel.Country == null)
             {
-                return liveByCountryAndStatusAfterDateUrlList.OrderByDescending(bc => bc.Date.Date);
+                return byCountryStatusAfterDateUrlList.OrderByDescending(bc => bc.Date.Date);
             }
 
-            return liveByCountryAndStatusAfterDateUrlList
-                    .Where(live => live.Country.Equals(liveByCountryAndStatusAfterDateViewModel.Country))
+            return byCountryStatusAfterDateUrlList
+                    .Where(live => live.Country.Equals(byCountryStatusAfterDateViewModel.Country))
                     .OrderByDescending(live => live.Date.Date);
         }
 

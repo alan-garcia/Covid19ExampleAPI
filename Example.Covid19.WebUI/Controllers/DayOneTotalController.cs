@@ -2,7 +2,6 @@
 using Example.Covid19.API.DTO.DayOneCases;
 using Example.Covid19.API.Services;
 using Example.Covid19.WebUI.Config;
-using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -18,15 +17,19 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class DayOneTotalController : BaseController
     {
+        private string dayOneTotalCacheKey = "dayOneTotal";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public DayOneTotalController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        /// <param name="cache">La caché en memoria</param>
+        public DayOneTotalController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -35,13 +38,15 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var dayOneTotalViewModel = await GetCountriesViewModel<DayOneTotalViewModel>();
-            string dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalViewModel);
-            var dayOneTotalList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
-            var dayOneTotalSearchFilter = ApplySearchFilter(dayOneTotalList, dayOneTotalViewModel);
-            dayOneTotalViewModel.DayOneTotal = dayOneTotalSearchFilter;
+            if (!_cache.Get(dayOneTotalCacheKey, out DayOneTotalViewModel dayOneTotalVM))
+            {
+                dayOneTotalVM = await GetCountriesViewModel<DayOneTotalViewModel>();
+                string dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalVM);
+                var dayOneTotalList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
+                dayOneTotalVM.DayOneTotal = ApplySearchFilter(dayOneTotalList, dayOneTotalVM);
+            }
 
-            return View(dayOneTotalViewModel);
+            return View(dayOneTotalVM);
         }
 
         /// <summary>
@@ -56,15 +61,19 @@ namespace Example.Covid19.WebUI.Controllers
         {
             if (ModelState.IsValid)
             {
-                string dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalViewModel);
-                var dayOneTotalList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
-                var dayOneTotalSearchFilter = ApplySearchFilter(dayOneTotalList, dayOneTotalViewModel);
+                dayOneTotalCacheKey = $"{dayOneTotalCacheKey}_{dayOneTotalViewModel.Country}_{dayOneTotalViewModel.StatusType}";
+                if (!_cache.Get(dayOneTotalCacheKey, out DayOneTotalViewModel dayOneTotalVM))
+                {
+                    dayOneTotalVM = await GetCountriesViewModel<DayOneTotalViewModel>();
+                    string dayOneTotalUrl = ExtractPlaceholderUrlApi(dayOneTotalVM);
+                    var dayOneTotalList = await _apiService.GetAsync<IEnumerable<DayOneTotal>>(dayOneTotalUrl);
+                    dayOneTotalVM.DayOneTotal = ApplySearchFilter(dayOneTotalList, dayOneTotalVM);
 
-                dayOneTotalViewModel.DayOneTotal = dayOneTotalSearchFilter;
+                    _cache.Set(dayOneTotalCacheKey, dayOneTotalVM);
+                }
+
+                dayOneTotalViewModel = dayOneTotalVM;
             }
-
-            dayOneTotalViewModel.Countries = await GetCountries();
-            dayOneTotalViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", dayOneTotalViewModel);
         }

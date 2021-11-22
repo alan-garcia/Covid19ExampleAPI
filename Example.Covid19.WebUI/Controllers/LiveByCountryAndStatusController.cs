@@ -2,7 +2,6 @@
 using Example.Covid19.API.DTO.LiveByCountryCases;
 using Example.Covid19.API.Services;
 using Example.Covid19.WebUI.Config;
-using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -18,15 +17,19 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class LiveByCountryAndStatusController : BaseController
     {
+        private string byCountryStatusCacheKey = "byCountryStatus";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public LiveByCountryAndStatusController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        /// <param name="cache">La caché en memoria</param>
+        public LiveByCountryAndStatusController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -35,75 +38,81 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var liveByCountryAndStatusViewModel = await GetCountriesViewModel<LiveByCountryAndStatusViewModel>();
-            string liveByCountryAndStatusUrl = ExtractPlaceholderUrlApi(liveByCountryAndStatusViewModel);
-            var liveByCountryAndStatusList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatus>>(liveByCountryAndStatusUrl);
-            var liveByCountryAndStatusSearchFilter = ApplySearchFilter(liveByCountryAndStatusList, liveByCountryAndStatusViewModel);
-            liveByCountryAndStatusViewModel.LiveByCountryAndStatus = liveByCountryAndStatusSearchFilter;
+            if (!_cache.Get(byCountryStatusCacheKey, out LiveByCountryAndStatusViewModel byCountryStatusVM))
+            {
+                byCountryStatusVM = await GetCountriesViewModel<LiveByCountryAndStatusViewModel>();
+                string byCountryStatusUrl = ExtractPlaceholderUrlApi(byCountryStatusVM);
+                var liveByCountryAndStatusList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatus>>(byCountryStatusUrl);
+                byCountryStatusVM.LiveByCountryAndStatus = ApplySearchFilter(liveByCountryAndStatusList, byCountryStatusVM);
+            }
 
-            return View(liveByCountryAndStatusViewModel);
+            return View(byCountryStatusVM);
         }
 
         /// <summary>
         ///     Aplica en el formulario los filtros de búsqueda de los casos en directo de los países y sus estados
         /// </summary>
-        /// <param name="liveByCountryAndStatusViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
+        /// <param name="byCountryStatusViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
         /// formulario de búsqueda</param>
         /// <returns>La vista con la lista de todos los casos en directo de los países que cumpla el criterio del estado</returns>
         [HttpPost]
         public async Task<ActionResult<IEnumerable<LiveByCountryAndStatus>>> GetLiveByCountryAndStatus(
-            LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel)
+            LiveByCountryAndStatusViewModel byCountryStatusViewModel)
         {
             if (ModelState.IsValid)
             {
-                string liveByCountryAndStatusUrl = ExtractPlaceholderUrlApi(liveByCountryAndStatusViewModel);
-                var liveByCountryAndStatusUrlList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatus>>(liveByCountryAndStatusUrl);
-                var liveByCountryAndStatusSearchFilter = ApplySearchFilter(liveByCountryAndStatusUrlList, liveByCountryAndStatusViewModel);
+                byCountryStatusCacheKey = $"{byCountryStatusCacheKey}_{byCountryStatusViewModel.Country}_{byCountryStatusViewModel.StatusType}";
+                if (!_cache.Get(byCountryStatusCacheKey, out LiveByCountryAndStatusViewModel byCountryStatusVM))
+                {
+                    byCountryStatusVM = await GetCountriesViewModel<LiveByCountryAndStatusViewModel>();
+                    string byCountryStatusUrl = ExtractPlaceholderUrlApi(byCountryStatusVM);
+                    var byCountryStatusUrlList = await _apiService.GetAsync<IEnumerable<LiveByCountryAndStatus>>(byCountryStatusUrl);
+                    byCountryStatusVM.LiveByCountryAndStatus = ApplySearchFilter(byCountryStatusUrlList, byCountryStatusVM);
 
-                liveByCountryAndStatusViewModel.LiveByCountryAndStatus = liveByCountryAndStatusSearchFilter;
+                    _cache.Set(byCountryStatusCacheKey, byCountryStatusVM);
+                }
+
+                byCountryStatusViewModel = byCountryStatusVM;
             }
 
-            liveByCountryAndStatusViewModel.Countries = await GetCountries();
-            liveByCountryAndStatusViewModel.StatusTypeList = StatusType.GetStatusTypeList();
-
-            return View("Index", liveByCountryAndStatusViewModel);
+            return View("Index", byCountryStatusViewModel);
         }
 
         /// <summary>
         ///     Sustituye los placeholders marcados entre corchetes "{" "}" especificados en el fichero "appsettings.json" 
         ///     en el apartado "Covid19Api" por los datos filtrados en la vista-modelo recogidas en el formulario de búsqueda
         /// </summary>
-        /// <param name="liveByCountryAndStatusViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
+        /// <param name="byCountryStatusViewModel">La vista-modelo que contienen las opciones seleccionadas en el 
         /// formulario de búsqueda</param>
         /// <returns>La URL de la API "live/country/status" con los parámetros de búsqueda sustituídos</returns>
-        private string ExtractPlaceholderUrlApi(LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel)
+        private string ExtractPlaceholderUrlApi(LiveByCountryAndStatusViewModel byCountryStatusViewModel)
         {
-            string liveByCountryAndStatusApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_KEY);
-            liveByCountryAndStatusViewModel.Country ??= "Spain";
-            liveByCountryAndStatusViewModel.StatusType ??= "confirmed";
+            string byCountryStatusApiUrl = GetAppSettingsUrlApiByKey(AppSettingsConfig.LIVE_BY_CONTRY_AND_STATUS_KEY);
+            byCountryStatusViewModel.Country ??= "Spain";
+            byCountryStatusViewModel.StatusType ??= "confirmed";
 
-            return new StringBuilder(liveByCountryAndStatusApiUrl)
-                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, liveByCountryAndStatusViewModel.Country)
-                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, liveByCountryAndStatusViewModel.StatusType)
+            return new StringBuilder(byCountryStatusApiUrl)
+                    .Replace(AppSettingsConfig.COUNTRYNAME_PLACEHOLDER, byCountryStatusViewModel.Country)
+                    .Replace(AppSettingsConfig.STATUS_PLACEHOLDER, byCountryStatusViewModel.StatusType)
                     .ToString();
         }
 
         /// <summary>
         ///     Aplica el filtro de búsqueda para los datos en directo de los países y sus estados
         /// </summary>
-        /// <param name="liveByCountryAndStatusUrlList">La lista de países</param>
-        /// <param name="liveByCountryAndStatusViewModel">La vista-modelo que contienen las opciones seleccionadas en el formulario de búsqueda</param>
+        /// <param name="byCountryStatusUrlList">La lista de países</param>
+        /// <param name="byCountryStatusViewModel">La vista-modelo que contienen las opciones seleccionadas en el formulario de búsqueda</param>
         /// <returns>Lista con los datos en directo de los países, ordenadas de fechas más recientes a más antiguas</returns>
-        private IEnumerable<LiveByCountryAndStatus> ApplySearchFilter(IEnumerable<LiveByCountryAndStatus> liveByCountryAndStatusUrlList,
-                                                                      LiveByCountryAndStatusViewModel liveByCountryAndStatusViewModel)
+        private IEnumerable<LiveByCountryAndStatus> ApplySearchFilter(IEnumerable<LiveByCountryAndStatus> byCountryStatusUrlList,
+                                                                      LiveByCountryAndStatusViewModel byCountryStatusViewModel)
         {
-            if (liveByCountryAndStatusViewModel.Country == null)
+            if (byCountryStatusViewModel.Country == null)
             {
-                return liveByCountryAndStatusUrlList.OrderByDescending(bc => bc.Date.Date);
+                return byCountryStatusUrlList.OrderByDescending(bc => bc.Date.Date);
             }
 
-            return liveByCountryAndStatusUrlList
-                    .Where(live => live.Country.Equals(liveByCountryAndStatusViewModel.Country))
+            return byCountryStatusUrlList
+                    .Where(live => live.Country.Equals(byCountryStatusViewModel.Country))
                     .OrderByDescending(live => live.Date.Date);
         }
 

@@ -18,23 +18,31 @@ namespace Example.Covid19.WebUI.Controllers
     {
         protected IApiService _apiService;
         protected IConfiguration _config;
+        protected ICovid19MemoryCacheService _cache;
 
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        protected BaseController(IApiService apiService, IConfiguration config)
+        /// <param name="cache">La caché en memoria</param>
+        protected BaseController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
+        /// <summary>
+        ///     Obtiene el modelo de los paises y sus estados
+        /// </summary>
+        /// <typeparam name="T">La Vista-Modelo</typeparam>
+        /// <returns>La Vista-Modelo con todos los países y sus posibles estados</returns>
         protected async Task<T> GetCountriesViewModel<T>() where T : CovidBaseViewModel, new()
         {
-            T viewModel = new T
+            T viewModel = new()
             {
-                Countries = await GetCountries(),
+                Countries = await GetCountriesSelect(),
                 StatusTypeList = StatusType.GetStatusTypeList()
             };
 
@@ -45,11 +53,10 @@ namespace Example.Covid19.WebUI.Controllers
         ///     Obtiene todos los datos relacionados con el país
         /// </summary>
         /// <returns>La lista de países en un elemento HTML de tipo "desplegable" para ser mostrado en la vista</returns>
-        protected async Task<IEnumerable<SelectListItem>> GetCountries()
+        protected async Task<IEnumerable<SelectListItem>> GetCountriesSelect()
         {
-            IEnumerable<Countries> countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
-
-            return CountriesList.BuildAndGetCountriesSelectListItem(countries);
+            var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
+            return CountriesList.GetCountriesSelectListItem(countries);
         }
 
         /// <summary>

@@ -1,7 +1,6 @@
 ﻿using Example.Covid19.API.DTO.CountriesCases;
 using Example.Covid19.API.Services;
 using Example.Covid19.WebUI.Config;
-using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -17,15 +16,20 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class ByCountryController : BaseController
     {
+        private string getCountriesCacheKey = "getCountries";
+        private string byCountryCacheKey = "byCountry";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public ByCountryController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        /// <param name="cache">La caché en memoria</param>
+        public ByCountryController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -34,13 +38,17 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var byCountryViewModel = await GetCountriesViewModel<ByCountryViewModel>();
-            string byCountryUrl = ExtractPlaceholderUrlApi(byCountryViewModel);
-            var byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
-            var byCountrySearchFilter = ApplySearchFilter(byCountryList, byCountryViewModel);
-            byCountryViewModel.ByCountry = byCountrySearchFilter;
+            if (!_cache.Get(getCountriesCacheKey, out ByCountryViewModel byCountryVM))
+            {
+                byCountryVM = await GetCountriesViewModel<ByCountryViewModel>();
+                string byCountryUrl = ExtractPlaceholderUrlApi(byCountryVM);
+                var byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
+                byCountryVM.ByCountry = ApplySearchFilter(byCountryList, byCountryVM);
 
-            return View(byCountryViewModel);
+                _cache.Set(getCountriesCacheKey, byCountryVM);
+            }
+
+            return View(byCountryVM);
         }
 
         /// <summary>
@@ -55,21 +63,25 @@ namespace Example.Covid19.WebUI.Controllers
         {
             if (ModelState.IsValid)
             {
-                string byCountryUrl = ExtractPlaceholderUrlApi(byCountryViewModel);
-                var byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
-                var byCountrySearchFilter = ApplySearchFilter(byCountryList, byCountryViewModel);
+                byCountryCacheKey = $"{byCountryCacheKey}_{byCountryViewModel.Country}_{byCountryViewModel.StatusType}_{byCountryViewModel.DateFrom.ToShortDateString()}_{byCountryViewModel.DateTo.ToShortDateString()}";
+                if (!_cache.Get(byCountryCacheKey, out ByCountryViewModel byCountryVM))
+                {
+                    byCountryVM = await GetCountriesViewModel<ByCountryViewModel>();
+                    string byCountryUrl = ExtractPlaceholderUrlApi(byCountryVM);
+                    var byCountryList = await _apiService.GetAsync<IEnumerable<ByCountry>>(byCountryUrl);
+                    byCountryVM.ByCountry = ApplySearchFilter(byCountryList, byCountryVM);
 
-                byCountryViewModel.ByCountry = byCountrySearchFilter;
+                    _cache.Set(byCountryCacheKey, byCountryVM);
+                }
+
+                byCountryViewModel = byCountryVM;
             }
-
-            byCountryViewModel.Countries = await GetCountries();
-            byCountryViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", byCountryViewModel);
         }
 
         /// <summary>
-        ///     Sustituye los placeholders marcados entre corchetes "{" "}" especificados en el fichero "appsettings.json" 
+        ///     Sustituye los placeholders marcados entre llaves "{}" especificados en el fichero "appsettings.json" 
         ///     en el apartado "Covid19Api" por los datos filtrados en la vista-modelo recogidas en el formulario de búsqueda
         /// </summary>
         /// <param name="byCountryViewModel">La vista-modelo que contienen las opciones seleccionadas en el 

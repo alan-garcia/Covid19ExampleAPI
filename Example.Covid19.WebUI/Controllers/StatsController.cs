@@ -13,15 +13,18 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class StatsController : BaseController
     {
+        private string getStatsCacheKey = "getStats";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public StatsController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        public StatsController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -30,13 +33,15 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con las estadísticas globales de los casos de COVID-19</returns>
         public async Task<ActionResult<StatViewModel>> GetStats()
         {
-            Stat stats = await GetRequestData<Stat>(AppSettingsConfig.STATS_KEY);
-            StatViewModel statViewModel = new()
+            if (!_cache.Get(getStatsCacheKey, out StatViewModel statsVM))
             {
-                Stat = stats
-            };
+                var stats = await GetRequestData<Stat>(AppSettingsConfig.STATS_KEY);
+                statsVM = new StatViewModel() { Stat = stats };
 
-            return View("Index", statViewModel);
+                _cache.Set(getStatsCacheKey, statsVM);
+            }
+
+            return View("Index", statsVM);
         }
     }
 }

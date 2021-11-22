@@ -1,7 +1,6 @@
 ﻿using Example.Covid19.API.DTO.CountriesCases;
 using Example.Covid19.API.Services;
 using Example.Covid19.WebUI.Config;
-using Example.Covid19.WebUI.Helpers;
 using Example.Covid19.WebUI.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -17,15 +16,19 @@ namespace Example.Covid19.WebUI.Controllers
     /// </summary>
     public class ByCountryTotalController : BaseController
     {
+        private string byCountryTotalCacheKey = "byCountryTotal";
+
         /// <summary>
         ///     Constructor que inyecta el servicio de la API y la configuración cargada en el fichero "appsettings.json"
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public ByCountryTotalController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        /// <param name="cache">La caché en memoria</param>
+        public ByCountryTotalController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -34,13 +37,15 @@ namespace Example.Covid19.WebUI.Controllers
         /// <returns>La vista con la lista de los países</returns>
         public async Task<ActionResult<IEnumerable<Countries>>> Index()
         {
-            var byCountryTotalViewModel = await GetCountriesViewModel<ByCountryTotalViewModel>();
-            string byCountryTotalUrl = ExtractPlaceholderUrlApi(byCountryTotalViewModel);
-            var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
-            var byCountryTotalSearchFilter = ApplySearchFilter(byCountryTotalList, byCountryTotalViewModel);
-            byCountryTotalViewModel.ByCountryTotal = byCountryTotalSearchFilter;
+            if (!_cache.Get(byCountryTotalCacheKey, out ByCountryTotalViewModel byCountryTotalVM))
+            {
+                byCountryTotalVM = await GetCountriesViewModel<ByCountryTotalViewModel>();
+                string byCountryTotalUrl = ExtractPlaceholderUrlApi(byCountryTotalVM);
+                var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
+                byCountryTotalVM.ByCountryTotal = ApplySearchFilter(byCountryTotalList, byCountryTotalVM);
+            }
 
-            return View(byCountryTotalViewModel);
+            return View(byCountryTotalVM);
         }
 
         /// <summary>
@@ -55,15 +60,19 @@ namespace Example.Covid19.WebUI.Controllers
         {
             if (ModelState.IsValid)
             {
-                string byCountryTotalUrl = ExtractPlaceholderUrlApi(byCountryTotalViewModel);
-                var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
-                var byCountryTotalSearchFilter = ApplySearchFilter(byCountryTotalList, byCountryTotalViewModel);
+                byCountryTotalCacheKey = $"{byCountryTotalCacheKey}_{byCountryTotalViewModel.Country}_{byCountryTotalViewModel.StatusType}_{byCountryTotalViewModel.DateFrom.ToShortDateString()}_{byCountryTotalViewModel.DateTo.ToShortDateString()}";
+                if (!_cache.Get(byCountryTotalCacheKey, out ByCountryTotalViewModel byCountryTotalVM))
+                {
+                    byCountryTotalVM = await GetCountriesViewModel<ByCountryTotalViewModel>();
+                    string byCountryTotalUrl = ExtractPlaceholderUrlApi(byCountryTotalVM);
+                    var byCountryTotalList = await _apiService.GetAsync<IEnumerable<ByCountryTotal>>(byCountryTotalUrl);
+                    byCountryTotalVM.ByCountryTotal = ApplySearchFilter(byCountryTotalList, byCountryTotalVM);
 
-                byCountryTotalViewModel.ByCountryTotal = byCountryTotalSearchFilter;
+                    _cache.Set(byCountryTotalCacheKey, byCountryTotalVM);
+                }
+
+                byCountryTotalViewModel = byCountryTotalVM;
             }
-
-            byCountryTotalViewModel.Countries = await GetCountries();
-            byCountryTotalViewModel.StatusTypeList = StatusType.GetStatusTypeList();
 
             return View("Index", byCountryTotalViewModel);
         }

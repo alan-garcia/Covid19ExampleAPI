@@ -2,7 +2,6 @@ using Example.Covid19.API.Models;
 using Example.Covid19.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,8 +21,11 @@ namespace Example.Covid19.WebUI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            services.AddMemoryCache();
             services.Configure<CovidApiAppSettingsModel>(Configuration.GetSection("Covid19Api"));
+
             services.AddSingleton<IApiService, ApiService>();
+            services.AddScoped<ICovid19MemoryCacheService, Covid19MemoryCacheService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

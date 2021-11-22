@@ -20,10 +20,12 @@ namespace Example.Covid19.WebUI.Controllers
         /// </summary>
         /// <param name="apiService">El servicio de la API de la cual va a consumir</param>
         /// <param name="config">El fichero de configuración "appsettings.json"</param>
-        public CountriesController(IApiService apiService, IConfiguration config) : base(apiService, config)
+        /// <param name="cache">La caché en memoria</param>
+        public CountriesController(IApiService apiService, IConfiguration config, ICovid19MemoryCacheService cache) : base(apiService, config, cache)
         {
             _apiService = apiService;
             _config = config;
+            _cache = cache;
         }
 
         /// <summary>
@@ -33,7 +35,7 @@ namespace Example.Covid19.WebUI.Controllers
         public async Task<ActionResult<CountriesViewModel>> GetCountries()
         {
             var countries = await GetRequestData<IEnumerable<Countries>>(AppSettingsConfig.COUNTRIES_KEY);
-            CountriesViewModel countriesViewModel = new()
+            var countriesViewModel = new CountriesViewModel()
             {
                 Countries = countries.OrderBy(c => c.Country)
             };
