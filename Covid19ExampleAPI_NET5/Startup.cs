@@ -44,6 +44,7 @@ namespace Example.Covid19.API
 
             services.Configure<CovidApiAppSettingsModel>(Configuration.GetSection("Covid19Api"));
             services.AddSingleton<IApiService, ApiService>();
+            services.AddScoped<ICovid19MemoryCacheService, Covid19MemoryCacheService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
